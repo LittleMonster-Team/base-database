@@ -51,9 +51,8 @@ public interface StatisticsService extends IService<CustomerInfo> {
     /**
      * 导出男女占比统计
      *
-     * @param obj      查询条件
-     * @param response 数据流
+     * @param obj 查询条件
      * @return
      */
-    R exprotStatisticsData(JSONObject obj, HttpServletResponse response);
+    R exprotStatisticsData(JSONObject obj);
 }

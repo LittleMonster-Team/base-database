@@ -87,14 +87,13 @@ public class StatisticsController {
     /**
      * 导出统计数据
      *
-     * @param obj      筛选条件
-     * @param response 数据流
+     * @param obj 筛选条件
      * @return
      */
     @SysLog("导出统计数据")
     @PostMapping("/exprotStatisticsData")
     @PreAuthorize("@ato.hasAuthority('database_statistics_exprot')")
-    public R exprotStatisticsData(@RequestBody JSONObject obj, HttpServletResponse response) {
-        return statisticsService.exprotStatisticsData(obj, response);
+    public R exprotStatisticsData(@RequestBody JSONObject obj) {
+        return statisticsService.exprotStatisticsData(obj);
     }
 }

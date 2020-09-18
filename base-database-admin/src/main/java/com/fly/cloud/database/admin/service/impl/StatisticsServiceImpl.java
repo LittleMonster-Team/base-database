@@ -239,13 +239,12 @@ public class StatisticsServiceImpl extends ServiceImpl<CustomerInfoMapper, Custo
     /**
      * 导出统计数据
      *
-     * @param obj      查询条件
-     * @param response 数据流
+     * @param obj 查询条件
      * @return
      */
     @Override
     @Transactional
-    public R exprotStatisticsData(JSONObject obj, HttpServletResponse response) {
+    public R exprotStatisticsData(JSONObject obj) {
         String organId = SecurityUtils.getUser().getOrganId();
         // 查询的年份
         String year = obj.getStr("year");
@@ -253,7 +252,7 @@ public class StatisticsServiceImpl extends ServiceImpl<CustomerInfoMapper, Custo
         String month = obj.getStr("month");
         // 查询数据
         List<CustomerInfo> infoList = this.getInfoList(organId, year, month);
-        return customerInfoService.exprotExcelData(infoList, response);
+        return customerInfoService.exprotExcelData(infoList);
     }
 
     /**
