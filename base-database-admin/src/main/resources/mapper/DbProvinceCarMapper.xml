@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.fly.cloud.database.admin.mapper.DbProvinceCarMapper">
+
+    <resultMap id="dbProvinceCarMap" type="com.fly.cloud.database.common.entity.DbProvinceCar">
+        <id property="id" column="id"/>
+        <result property="hp" column="hp"/>
+        <result property="city" column="city"/>
+        <result property="province" column="province"/>
+        <result property="pCode" column="p_code"/>
+        <result property="areaCode" column="area_code"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="creatorUser" column="creator_user"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="organId" column="organ_id"/>
+    </resultMap>
+
+    <sql id="dbProvinceCarSql">
+        db_province_car.`id`,        db_province_car.`hp`,        db_province_car.`city`,        db_province_car.`province`,
+        db_province_car.`p_code`,        db_province_car.`area_code`,        db_province_car.`create_time`,        db_province_car.`update_time`,
+        db_province_car.`creator_user`,        db_province_car.`del_flag`,        db_province_car.`tenant_id`,        db_province_car.`organ_id`    </sql>
+</mapper>

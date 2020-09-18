@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.fly.cloud.database.admin.mapper.CustomerInfoTemporaryMapper">
+
+    <resultMap id="customerInfoTemporaryMap" type="com.fly.cloud.database.common.entity.CustomerInfoTemporary">
+        <id property="id" column="id"/>
+        <result property="customerName" column="customer_name"/>
+        <result property="gender" column="gender"/>
+        <result property="phone" column="phone"/>
+        <result property="idCard" column="id_card"/>
+        <result property="carNum" column="car_num"/>
+        <result property="brandModel" column="brand_model"/>
+        <result property="vinNum" column="vin_num"/>
+        <result property="engineNum" column="engine_num"/>
+        <result property="clause" column="clause"/>
+        <result property="vehicleTypeCode" column="vehicle_type_code"/>
+        <result property="usePropertyCode" column="use_property_code"/>
+        <result property="accidentsNum" column="accidents_num"/>
+        <result property="serviceLife" column="service_life"/>
+        <result property="firstDate" column="first_date"/>
+        <result property="salesman" column="salesman"/>
+        <result property="province" column="province"/>
+        <result property="city" column="city"/>
+        <result property="county" column="county"/>
+        <result property="version" column="version"/>
+        <result property="errorMsg" column="error_msg"/>
+        <result property="tableInfo" column="table_info"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="creatorUser" column="creator_user"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="organId" column="organ_id"/>
+        <result property="insuranceStart" column="insurance_start"/>
+        <result property="insuranceEnd" column="insurance_end"/>
+        <result property="seatNum" column="seat_num"/>
+        <result property="carTypeOne" column="car_type_one"/>
+        <result property="carTypeTwo" column="car_type_two"/>
+        <result property="phoneOne" column="phone_one"/>
+        <result property="phoneTwo" column="phone_two"/>
+        <result property="phoneThree" column="phone_three"/>
+        <result property="recallOne" column="recall_one"/>
+        <result property="recallTwo" column="recall_two"/>
+        <result property="recallThree" column="recall_three"/>
+        <result property="spareField1" column="spare_field1"/>
+        <result property="spareField2" column="spare_field2"/>
+        <result property="spareField3" column="spare_field3"/>
+        <result property="spareField4" column="spare_field4"/>
+        <result property="spareField5" column="spare_field5"/>
+        <result property="dataType" column="data_type"/>
+        <result property="editFlag" column="edit_flag"/>
+        <result property="month" column="month"/>
+    </resultMap>
+
+    <sql id="customerInfoTemporarySql">
+        customer_info_temporary.`id`,        customer_info_temporary.`customer_name`,        customer_info_temporary.`gender`,
+        customer_info_temporary.`phone`,        customer_info_temporary.`id_card`,        customer_info_temporary.`car_num`,
+        customer_info_temporary.`brand_model`,        customer_info_temporary.`vin_num`,        customer_info_temporary.`engine_num`,
+        customer_info_temporary.`clause`,        customer_info_temporary.`vehicle_type_code`,        customer_info_temporary.`use_property_code`,
+        customer_info_temporary.`accidents_num`,        customer_info_temporary.`service_life`,        customer_info_temporary.`first_date`,
+        customer_info_temporary.`salesman`,        customer_info_temporary.`province`,        customer_info_temporary.`city`,
+        customer_info_temporary.`county`,        customer_info_temporary.`version`,        customer_info_temporary.`error_msg`,
+        customer_info_temporary.`table_info`,        customer_info_temporary.`create_time`,        customer_info_temporary.`update_time`,
+        customer_info_temporary.`creator_user`,        customer_info_temporary.`del_flag`,        customer_info_temporary.`tenant_id`,
+        customer_info_temporary.`organ_id`,        customer_info_temporary.`insurance_start`,        customer_info_temporary.`insurance_end`,
+        customer_info_temporary.`seat_num`,        customer_info_temporary.`car_type_one`,        customer_info_temporary.`car_type_two`,
+        customer_info_temporary.`phone_one`,        customer_info_temporary.`phone_two`,        customer_info_temporary.`phone_three`,
+        customer_info_temporary.`recall_one`,        customer_info_temporary.`recall_two`,        customer_info_temporary.`recall_three`,
+        customer_info_temporary.`spare_field1`,        customer_info_temporary.`spare_field2`,        customer_info_temporary.`spare_field3`,
+        customer_info_temporary.`spare_field4`,        customer_info_temporary.`spare_field5`        customer_info_temporary.`data_type`
+        customer_info_temporary.`edit_flag`        customer_info_temporary.`month`    </sql>
+
+
+    <!--清空表数据-->
+    <select id="clearTableData" resultMap="customerInfoTemporaryMap">
+        TRUNCATE TABLE customer_info_temporary
+    </select>
+</mapper>

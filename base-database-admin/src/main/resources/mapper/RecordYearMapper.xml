@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.fly.cloud.database.admin.mapper.RecordYearMapper">
+
+    <resultMap id="recordYearMap" type="com.fly.cloud.database.common.entity.RecordYear">
+        <id property="id" column="id"/>
+        <result property="yearData" column="year_data"/>
+        <result property="yearInfo" column="year_info"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="creatorUser" column="creator_user"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="organId" column="organ_id"/>
+    </resultMap>
+
+    <sql id="recordYearSql">
+        record_year.`id`,        record_year.`year_data`,        record_year.`year_info`,        record_year.`create_time`,
+        record_year.`update_time`,        record_year.`creator_user`,        record_year.`del_flag`,        record_year.`tenant_id`,
+        record_year.`organ_id`    </sql>
+</mapper>

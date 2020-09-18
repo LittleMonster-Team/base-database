@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.fly.cloud.database.admin.mapper.DbSequenceMapper">
+
+    <resultMap id="dbSequenceMap" type="com.fly.cloud.database.common.entity.DbSequence">
+        <id property="name" column="name"/>
+        <result property="currentValue" column="current_value"/>
+        <result property="increment" column="increment"/>
+    </resultMap>
+
+    <sql id="dbSequenceSql">
+        db_sequence.`name`,        db_sequence.`current_value`,        db_sequence.`increment`    </sql>
+</mapper>

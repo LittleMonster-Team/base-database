@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.fly.cloud.database.admin.mapper.CustomerInfoMapper">
+
+    <resultMap id="customerInfoMap" type="com.fly.cloud.database.common.entity.CustomerInfo">
+        <id property="id" column="id"/>
+        <result property="customerName" column="customer_name"/>
+        <result property="gender" column="gender"/>
+        <result property="phone" column="phone"/>
+        <result property="idCard" column="id_card"/>
+        <result property="carNum" column="car_num"/>
+        <result property="brandModel" column="brand_model"/>
+        <result property="vinNum" column="vin_num"/>
+        <result property="engineNum" column="engine_num"/>
+        <result property="clause" column="clause"/>
+        <result property="vehicleTypeCode" column="vehicle_type_code"/>
+        <result property="usePropertyCode" column="use_property_code"/>
+        <result property="accidentsNum" column="accidents_num"/>
+        <result property="serviceLife" column="service_life"/>
+        <result property="firstDate" column="first_date"/>
+        <result property="salesman" column="salesman"/>
+        <result property="province" column="province"/>
+        <result property="city" column="city"/>
+        <result property="county" column="county"/>
+        <result property="version" column="version"/>
+        <result property="errorMsg" column="error_msg"/>
+        <result property="tableInfo" column="table_info"/>
+        <result property="useYears" column="use_years"/>
+        <result property="useYear" column="use_year"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="creatorUser" column="creator_user"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="organId" column="organ_id"/>
+        <result property="insuranceStart" column="insurance_start"/>
+        <result property="insuranceEnd" column="insurance_end"/>
+        <result property="seatNum" column="seat_num"/>
+        <result property="carTypeOne" column="car_type_one"/>
+        <result property="carTypeTwo" column="car_type_two"/>
+        <result property="phoneOne" column="phone_one"/>
+        <result property="phoneTwo" column="phone_two"/>
+        <result property="phoneThree" column="phone_three"/>
+        <result property="recallOne" column="recall_one"/>
+        <result property="recallTwo" column="recall_two"/>
+        <result property="recallThree" column="recall_three"/>
+        <result property="spareField1" column="spare_field1"/>
+        <result property="spareField2" column="spare_field2"/>
+        <result property="spareField3" column="spare_field3"/>
+        <result property="spareField4" column="spare_field4"/>
+        <result property="spareField5" column="spare_field5"/>
+    </resultMap>
+
+    <sql id="customerInfoSql">
+        customer_info.`id`,        customer_info.`customer_name`,        customer_info.`gender`,        customer_info.`phone`,
+        customer_info.`id_card`,        customer_info.`car_num`,        customer_info.`brand_model`,        customer_info.`vin_num`,
+        customer_info.`engine_num`,        customer_info.`clause`,        customer_info.`vehicle_type_code`,        customer_info.`use_property_code`,
+        customer_info.`accidents_num`,        customer_info.`service_life`,        customer_info.`first_date`,        customer_info.`salesman`,
+        customer_info.`province`,        customer_info.`city`,        customer_info.`county`,        customer_info.`version`,        customer_info.`error_msg`,
+        customer_info.`table_info`,        customer_info.`use_years`,        customer_info.`use_year`,        customer_info.`create_time`,
+        customer_info.`update_time`,        customer_info.`creator_user`,        customer_info.`del_flag`,        customer_info.`tenant_id`,
+        customer_info.`organ_id`,        customer_info.`insurance_start`        customer_info.`insurance_end`        customer_info.`seat_num`,
+        customer_info.`car_type_one`,        customer_info.`car_type_two`        customer_info.`phone_one`        customer_info.`phone_two`,
+        customer_info.`phone_three`,        customer_info.`recall_one`        customer_info.`recall_two`        customer_info.`recall_three`,
+        customer_info.`spare_field1`        customer_info.`spare_field2`        customer_info.`spare_field3`        customer_info.`spare_field4`
+        customer_info.`spare_field5`    </sql>
+</mapper>
