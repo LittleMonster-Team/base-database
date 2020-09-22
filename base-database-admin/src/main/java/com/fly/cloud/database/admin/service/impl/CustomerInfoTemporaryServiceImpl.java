@@ -91,17 +91,17 @@ public class CustomerInfoTemporaryServiceImpl extends ServiceImpl<CustomerInfoTe
     @Override
     @Transactional
     public List<CustomerInfoTemporary> addTemporaryData(List<CustomerInfo> dataList, String dataType) {
-//        System.out.println("差异数据：" + dataList.size());
         List<CustomerInfoTemporary> list = new ArrayList<CustomerInfoTemporary>();
         dataList.stream().map(info -> {
             CustomerInfoTemporary temporary = new CustomerInfoTemporary();
+            // 转换数据
             BeanUtils.copyProperties(info, temporary);
             // 设置id
             temporary.setId(UUID.randomUUID().toString().replace("-", ""));
             // 添加id
             temporary.setParentId(info.getId());
             // 设置初登日期的月份，用于后续查询
-            temporary.setMonth(StringUtils.isNotBlank(info.getFirstDate()) ? info.getFirstDate().split("-")[1] : "");
+            temporary.setMonth(StringUtils.isNotBlank(info.getFirstDate()) && !"无".equals(info.getFirstDate()) ? info.getFirstDate().split("-")[1] : "");
             // 记录数据类型
             temporary.setDataType(dataType);
             list.add(temporary);
@@ -129,20 +129,18 @@ public class CustomerInfoTemporaryServiceImpl extends ServiceImpl<CustomerInfoTe
         infoList.forEach(temporary -> {
             if (temporary.getVersion() == CommonConstants.NEW_DATA) {// 新数据
                 // 如果数据修改了更新表数据否则不做操作
-                if (StringUtils.isNotBlank(temporary.getEditFlag()) && temporary.getEditFlag().equals(CommonConstants.EDIT_FLAG)) {
-                    // 将表中数据查询出来
-                    List<CustomerInfo> dataList = customerInfoService.getCustomerInfoByCarNum(temporary.getCarNum(), temporary.getTableInfo());
-                    if (dataList != null && dataList.size() > 0) {
-                        // 将表中数据添加进版本表中
-                        versionInfoList.add(dataList.get(0));
-                    } else {
-                        CustomerInfo info = new CustomerInfo();
-                        // 转换数据类型
-                        BeanUtils.copyProperties(temporary, info);
-                        // 设置id
-                        info.setId(UUID.randomUUID().toString().replace("-", ""));
-                        versionInfoList.add(info);
-                    }
+                // 将表中数据查询出来
+                List<CustomerInfo> dataList = customerInfoService.getCustomerInfoByCarNum(temporary.getCarNum(), temporary.getTableInfo());
+                if (dataList != null && dataList.size() > 0) {
+                    // 将表中数据添加进版本表中
+                    versionInfoList.add(dataList.get(0));
+                } else {
+                    CustomerInfo info = new CustomerInfo();
+                    // 转换数据类型
+                    BeanUtils.copyProperties(temporary, info);
+                    // 设置id
+                    info.setId(UUID.randomUUID().toString().replace("-", ""));
+                    versionInfoList.add(info);
                 }
                 // 更新表数据
                 updateInfoList.add(temporary);
@@ -248,7 +246,7 @@ public class CustomerInfoTemporaryServiceImpl extends ServiceImpl<CustomerInfoTe
             }
             idList.add(temporary.getId());
         }
-        // 如果数据有错
+        // 校验数据是否有错
         if (num != 0) {
             return R.failed("所选信息中含有错误信息");
         } else {
@@ -259,6 +257,7 @@ public class CustomerInfoTemporaryServiceImpl extends ServiceImpl<CustomerInfoTe
                 list = customerInfoService.dataAssignment(list);
                 // 获取成功与差异数据
                 Map<String, List<CustomerInfo>> map = customerInfoService.getDifferenceInfoData(list, organId);
+                // 获取差异数据
                 List<CustomerInfo> differenceList = map.get("differenceList");
                 if (differenceList != null && differenceList.size() > 0) {
                     dInfoList.addAll(this.addTemporaryData(map.get("differenceList"), CommonConstants.DIFFERENCE_DATA));

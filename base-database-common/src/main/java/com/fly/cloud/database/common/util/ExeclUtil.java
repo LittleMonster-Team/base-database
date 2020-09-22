@@ -62,6 +62,7 @@ public class ExeclUtil {
         // 将文件流转换成poi对象
         Workbook workbook = null;
         // 校验文件类型
+        System.out.println("校验文件类型开始：" + DateUtils.getCurrentDate());
         if (CommonConstants.Excel_2003.equals(fileType)) {// 2003 版本的excel
             workbook = new HSSFWorkbook(in);
         } else if (CommonConstants.Excel_2007.equals(fileType)) {// 2007 版本的excel
@@ -70,6 +71,7 @@ public class ExeclUtil {
             workbook.close();
             throw new Exception("导入文件格式不正确");
         }
+        System.out.println("校验文件类型结束：" + DateUtils.getCurrentDate());
         // excel中字段的中英文名字数组
         String[] egtitles = new String[fields.size()];
         String[] cntitles = new String[fields.size()];
@@ -78,7 +80,7 @@ public class ExeclUtil {
         int count = 0;
         // 遍历数据存放中英文字段
         while (it.hasNext()) {
-            String cntitle = (String) it.next();
+            String cntitle = it.next();
             String egtitle = fields.get(cntitle);
             egtitles[count] = egtitle;
             cntitles[count] = cntitle;
@@ -91,6 +93,7 @@ public class ExeclUtil {
             throw new Exception("Excel文件中没有任何数据");
         }
         // 数据的导出
+        System.out.println("数据的导出开始：" + DateUtils.getCurrentDate());
         for (int i = 0; i < sheetcount; i++) {
             // 过滤隐藏sheet
             boolean sheetHidden = workbook.isSheetHidden(i);
@@ -112,6 +115,7 @@ public class ExeclUtil {
             // 存放文件字段名称
             String[] excelFieldNames = new String[celllength];
             // 存放列名与序号
+            System.out.println("存放列名与序号开始：" + DateUtils.getCurrentDate());
             Map<String, Integer> colMap = new LinkedHashMap<String, Integer>();
             for (int f = 0; f < celllength; f++) {
                 // 判断空列
@@ -406,7 +410,7 @@ public class ExeclUtil {
         int count = 0;
         // 遍历数据存放中英文字段
         while (it.hasNext()) {
-            String cntitle = (String) it.next();
+            String cntitle = it.next();
             String egtitle = fields.get(cntitle);
             egtitles[count] = egtitle;
             cntitles[count] = cntitle;

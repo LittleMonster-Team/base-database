@@ -19,7 +19,6 @@ import com.fly.cloud.database.common.vo.CustomerInfoVO;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,7 +58,7 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
     @Autowired
     private RecordYearService recordYearService;
     @Autowired
-    private RedisTemplate redisTemplate;
+    private CustomerInfoAsyncService asyncService;
 
     /**
      * 批量导入上传数据
@@ -71,8 +70,8 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
     @Override
     @Transactional(rollbackFor = Exception.class)
     public R importExcelData(String filePathStr, String fileNames, String organId) {
-        // 清空上一次的临时数据
-        infoTemporaryService.clearTableData();
+        System.err.println("开始：" + DateUtils.getCurrentDate());
+        long kaishi = System.currentTimeMillis();
         try {
             // filePathStr = "C:/Users/Administrator/Desktop/1000条测试数据.xlsx|C:/Users/Administrator/Desktop/1000条测试数据.xlsx|C:/Users/Administrator/Desktop/奎屯排查.xls";
             // 文件路径
@@ -90,6 +89,7 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
             // 循环上传文件
             layer:
             for (int i = 0; i < filePathSplit.length; i++) {
+                System.err.println("第" + i + "开始：" + DateUtils.getCurrentDate());
                 // 文件版本类型
                 String fileType = "";
                 //获取文件的后缀名
@@ -137,7 +137,9 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
                     necessaryFieldTypes.put(row[0], row[1]);
                 }
                 // 获取Excel解析数据
+                System.out.println("获取Excel解析数据开始：" + DateUtils.getCurrentDate());
                 Map<String, Object> resultMap = ExeclUtil.ExeclToList(in, CustomerInfo.class, fields, fieldTypes, necessaryFieldTypes, fileType);
+                System.out.println("获取Excel解析数据结束：" + DateUtils.getCurrentDate());
                 // 解析数据结果集
                 List<CustomerInfo> sList = (List<CustomerInfo>) resultMap.get("successList");
                 List<CustomerInfo> failList = (List<CustomerInfo>) resultMap.get("failList");
@@ -153,23 +155,25 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
                 }
                 // 给地区与性别信息赋值
                 sList = this.dataAssignment(sList);
+                System.out.println("获取成功与差异数据开始：" + DateUtils.getCurrentDate());
                 // 获取成功与差异数据
                 Map<String, List<CustomerInfo>> map = this.getDifferenceInfoData(sList, organId);
+                System.out.println("获取成功与差异数据结束" + DateUtils.getCurrentDate());
                 List<CustomerInfo> successList = map.get("successList");
                 List<CustomerInfo> differenceList = map.get("differenceList");
                 // 记录成功数据
                 if (successList != null && successList.size() > 0) {
                     sInfoList.addAll(successList);
                 }
-                // 将差异数据与失败数据添加进临时表中
                 if (differenceList != null && differenceList.size() > 0) {
-                    infoTemporaryService.addTemporaryData(differenceList, CommonConstants.DIFFERENCE_DATA);
                     dInfoList.addAll(differenceList);
                 }
                 if (failList != null && failList.size() > 0) {
-                    infoTemporaryService.addTemporaryData(failList, CommonConstants.FAIL_DATA);
                     fInfoList.addAll(failList);
                 }
+                // 将数据添加进临时表中
+                asyncService.saveInfoTemporary(differenceList, failList);
+                System.err.println("第" + i + "结束：" + DateUtils.getCurrentDate());
             }
             Map<String, Object> map = new HashMap<String, Object>();
             map.put("successList", sInfoList);
@@ -180,6 +184,9 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
             map.put("differenceNum", dInfoList.size());
             map.put("failFileList", fFileList);
             map.put("failFileNum", fFileList.size());
+            long jieshu = System.currentTimeMillis();
+            System.err.println("所耗时长：" + (jieshu - kaishi));
+            System.err.println("结束：" + DateUtils.getCurrentDate());
             return R.ok(map);
         } catch (Exception e) {
             e.printStackTrace();
@@ -242,8 +249,6 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         Map<String, Object> map = new HashMap<String, Object>();
         // 返回文件大小
         double fileSize = 0;
-        List<CustomerInfo> chuList = new ArrayList<>();
-        List<CustomerInfo> yuList = new ArrayList<>();
         String starTime = DateUtils.getCurrentDate();
         System.out.println("starTime" + starTime);
         // 校验文件是否存在
@@ -259,10 +264,11 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
             String[] row = f.split("_");
             fields.put(row[0], row[1]);
         }
+        // 获取需要创建文档的数量
         long chu = infoList.size() / 50000;
         if (chu > 0) {
             for (long index = 0; index < chu; index++) {
-                chuList = infoList.subList((int) index * 50000, (int) index * 50000 + 50000);
+                List<CustomerInfo> chuList = infoList.subList((int) index * 50000, (int) index * 50000 + 50000);
                 try {
                     // 获取文件相关信息
                     double size = ExeclUtil.WorkToLocal(ExeclUtil.ListToWorkbook(chuList, fields, CommonConstants.Excel_2007), ctxPath);
@@ -273,9 +279,10 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
                 }
             }
         }
+        // 获取剩余添加的数
         long yu = infoList.size() % 50000;
         if (yu > 0) {
-            yuList = infoList.subList((int) (infoList.size() - yu), infoList.size());
+            List<CustomerInfo> yuList = infoList.subList((int) (infoList.size() - yu), infoList.size());
             try {
                 // 获取文件相关信息
                 double size = ExeclUtil.WorkToLocal(ExeclUtil.ListToWorkbook(yuList, fields, CommonConstants.Excel_2007), ctxPath);
@@ -344,7 +351,6 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         Map<String, List<CustomerInfo>> resultMap = new HashMap<String, List<CustomerInfo>>();
         // 如果数据库中无数据，直接保存新数据
         if (tList != null && tList.size() > 0) {
-//            System.err.println("总数据.size()" + tList.size());
             // 总数据MAP
             Map<String, CustomerInfo> tmap = tList.stream()
                     .collect(Collectors.toMap(CustomerInfo::getCarNum, Function.identity(), (key1, key2) -> key2));
@@ -379,6 +385,246 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
             resultMap.put("differenceList", null);
             return resultMap;
         }
+    }
+
+    /**
+     * 筛选客户信息列表
+     *
+     * @param obj 数据信息
+     * @return
+     */
+    @Override
+    @Transactional
+    public Page screenCustomerInfo(JSONObject obj) {
+        // Obj转实体类
+        Page page = JsonUtils.ObjToEntity(obj.getObj("page"), Page.class);
+        CustomerInfo customerInfo = JsonUtils.ObjToEntity(obj.getObj("customerInfo"), CustomerInfo.class);
+        String month = obj.getStr("month");
+        // 获取登录的商户信息
+        String organId = SecurityUtils.getUser().getOrganId();
+        // 查询数据
+        // 获取当前序列号
+        Long sequence = this.getSequenceValue(organId);
+        // 多表查询比较重复数据
+        List<CustomerInfo> customerInfoList = new LinkedList<CustomerInfo>();
+        // 获取建表年份
+        Map<String, String> yearMap = recordYearService.getYearData(organId);
+        String yearInfo = yearMap.get("yearInfo");
+        for (long i = sequence; i >= 0; i--) {
+            String[] yaerSplit = yearInfo.split(",");
+            for (String year : yaerSplit) {
+                // 筛选数据
+                List<CustomerInfo> customerInfos = OperationUtils.screenData(this.queryInfoListByMonth(organId, i, year, month), customerInfo);
+                if (customerInfos != null && customerInfos.size() > 0) {
+                    customerInfoList.addAll(customerInfos);
+                }
+            }
+        }
+        List<CustomerInfo> records = null;
+        int total = 0;
+        if (customerInfoList != null && customerInfoList.size() > 0) {
+            // 总条数
+            total = customerInfoList.size();
+            // 分页查询数据
+            records = PageUtils.getPage(customerInfoList, String.valueOf(page.getCurrent()), page.getSize());
+        }
+        // 获取数据数量
+        page.setTotal(total);
+        // 赋值
+        page.setRecords(records);
+        return page;
+    }
+
+    /**
+     * 搜索客户信息列表
+     *
+     * @param obj 数据信息
+     * @return
+     */
+    @Override
+    @Transactional
+    public Page searchCustomerInfo(JSONObject obj) {
+        // Obj转实体类
+        Page page = JsonUtils.ObjToEntity(obj.getObj("page"), Page.class);
+        String condition = obj.getStr("condition");
+        // 获取登录的商户信息
+        String organId = SecurityUtils.getUser().getOrganId();
+        // 查询数据
+        // 获取当前序列号
+        Long sequence = this.getSequenceValue(organId);
+        // 多表查询比较重复数据
+        List<CustomerInfo> customerInfoList = new LinkedList<CustomerInfo>();
+        Map<String, String> yearMap = recordYearService.getYearData(organId);
+        String yearInfo = yearMap.get("yearInfo");
+        for (long i = sequence; i >= 0; i--) {
+            String[] yaerSplit = yearInfo.split(",");
+            for (String year : yaerSplit) {
+                // 筛选数据
+                List<CustomerInfo> customerInfos = OperationUtils.searchData(this.queryCustomerInfoList(organId, i, year), condition);
+                if (customerInfos != null && customerInfos.size() > 0) {
+                    customerInfoList.addAll(customerInfos);
+                }
+            }
+        }
+        List<CustomerInfo> records = null;
+        int total = 0;
+        if (customerInfoList != null && customerInfoList.size() > 0) {
+            // 总条数
+            total = customerInfoList.size();
+            // 分页查询数据
+            records = PageUtils.getPage(customerInfoList, String.valueOf(page.getCurrent()), page.getSize());
+        }
+        // 获取数据数量
+        page.setTotal(total);
+        // 赋值
+        page.setRecords(records);
+        return page;
+    }
+
+    /**
+     * 获取表序列
+     *
+     * @param organId 商户id
+     * @return
+     */
+    @Override
+    @Transactional
+    public Long getSequenceValue(String organId) {
+        // 获取正式表序列名
+        String seqName = CommonConstants.BASE_DATA_PREFIX + "_" + organId;
+        DbSequence dbSequence = dbSequenceService.getById(seqName);
+        if (dbSequence != null) {
+            return dbSequence.getCurrentValue();
+        } else {
+            dbSequenceService.saveSeqByName(seqName, 0, 1);
+            DbSequence sequence = dbSequenceService.getById(seqName);
+            recordYearService.saveYearInfo(organId);
+            return sequence.getCurrentValue();
+        }
+    }
+
+    /**
+     * 更新客户信息
+     *
+     * @param customerInfo 客户信息
+     * @return
+     */
+    @Override
+    @Transactional
+    public R updateCustomerInfo(CustomerInfo customerInfo) {
+        //  获取表名
+        String tableName = "";
+        if (StringUtils.isNotBlank(customerInfo.getTableInfo())) {
+            tableName = customerInfo.getTableInfo();
+        } else {
+            // 获取登录的商户信息
+            String organId = SecurityUtils.getUser().getOrganId();
+            // 获取表序列号
+            Long num = this.getSequenceValue(organId);
+            // 获取当前年份
+            String year = DateUtils.getYear();
+            // 获取表名
+            tableName = dataBaseExcelProperties.getTablePrefix() + organId + "_" + year + "_" + num;
+        }
+        // 设置出险次数默认值
+        if (customerInfo.getAccidentsNum().equals(CommonConstants.DEFAULT_INITIAL_VALUE_NOTHING) || !StringUtils.isNotBlank(customerInfo.getAccidentsNum())) {
+            customerInfo.setAccidentsNum(CommonConstants.DEFAULT_INITIAL_VALUE_ZERO);
+        }
+        // 编辑字段
+        String fieldSql = "customer_name = '" + customerInfo.getCustomerName() + "', " +
+                "gender = '" + customerInfo.getGender() + "', " +
+                "phone = '" + customerInfo.getPhone() + "', " +
+                "id_card = '" + customerInfo.getIdCard() + "', " +
+                "car_num = '" + customerInfo.getCarNum() + "', " +
+                "brand_model = '" + customerInfo.getBrandModel() + "', " +
+                "vin_num = '" + customerInfo.getVinNum() + "', " +
+                "engine_num = '" + customerInfo.getEngineNum() + "', " +
+                "clause = '" + customerInfo.getClause() + "', " +
+                "vehicle_type_code = '" + customerInfo.getVehicleTypeCode() + "', " +
+                "use_property_code = '" + customerInfo.getUsePropertyCode() + "', " +
+                "accidents_num = '" + customerInfo.getAccidentsNum() + "', " +
+                "service_life = '" + customerInfo.getServiceLife() + "', " +
+                "first_date = '" + customerInfo.getFirstDate() + "', " +
+                "salesman = '" + customerInfo.getSalesman() + "', " +
+                "update_time = '" + DateUtils.getCurrentDate() + "'";
+
+        String sql = "UPDATE " + tableName + " SET " + fieldSql + " WHERE car_num=" + "'" + customerInfo.getCarNum() + "'";
+        try {
+            // 更新表数据
+            JdbcUtils.exectueUpdate(dataBaseDataProperties, sql, null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return R.failed(CommonConstants.ERROR_RESULT, "更新失败");
+        }
+        return R.ok();
+    }
+
+    /**
+     * 插入数据并记录差异数据
+     *
+     * @param infoList    数据
+     * @param tableName   表明
+     * @param tableFields 表字段
+     */
+    @Override
+    @Transactional
+    public void insertInfoData(List<CustomerInfo> infoList, String tableName, String tableFields) {
+        List<CustomerInfo> list = (List<CustomerInfo>) this.insertCustomerInfoData(infoList, tableName, tableFields);
+        if (list != null && list.size() > 0) {
+            // 记录数据类型
+            List<CustomerInfo> collect = list.stream().map(info -> {
+                info.setVersion(CommonConstants.USED_DATA);
+                return info;
+            }).collect(Collectors.toList());
+            // 插入车牌号重复数据
+            infoTemporaryService.addTemporaryData(collect, CommonConstants.DIFFERENCE_DATA);
+        }
+    }
+
+    /**
+     * 批量插入数据
+     *
+     * @param infoList    数据
+     * @param tableName   表明
+     * @param tableFields 表字段
+     */
+    @Override
+    @Transactional
+    public Object insertCustomerInfoData(List<CustomerInfo> infoList, String tableName, String tableFields) {
+        // 转换数据类型
+        List<Object> dataList = new ArrayList<Object>();
+        // 错误集合
+        List<CustomerInfo> repeatList = new ArrayList<CustomerInfo>();
+        // 设置表名用于修改使用
+        infoList.forEach(info -> {
+            // 设置出险次数
+            if (!StringUtils.isNotBlank(info.getAccidentsNum()) || info.getAccidentsNum().equals("无")) {
+                info.setAccidentsNum(CommonConstants.DEFAULT_INITIAL_VALUE_ZERO);
+            }
+            // 设置使用年限(含有小数)
+            info.setUseYears(DateUtils.yearCompare(info.getFirstDate(), DateUtils.getCurrentTime()).get("useYears").toString());
+            // 设置使用年限(整年)
+            info.setUseYear(DateUtils.yearCompare(info.getFirstDate(), DateUtils.getCurrentTime()).get("useYear").toString());
+            // 设置表信息(存放表名，用于以后修改)
+            info.setTableInfo(tableName);
+            dataList.add(info);
+            // 批量插入数据
+            if (dataList.size() % 1000 == 0) {
+                List<CustomerInfo> list = (List<CustomerInfo>) JdbcUtils.svaeBatch(dataBaseDataProperties, tableName, tableFields, dataList, CustomerInfo.class);
+                if (list != null && list.size() > 0) {
+                    repeatList.addAll(list);
+                }
+                dataList.clear();
+            }
+        });
+        if (dataList.size() > 0) {
+            List<CustomerInfo> list = (List<CustomerInfo>) JdbcUtils.svaeBatch(dataBaseDataProperties, tableName, tableFields, dataList, CustomerInfo.class);
+            if (list != null && list.size() > 0) {
+                repeatList.addAll(list);
+            }
+            dataList.clear();
+        }
+        return repeatList;
     }
 
     /**
@@ -480,235 +726,6 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
     }
 
     /**
-     * 筛选客户信息列表
-     *
-     * @param obj 数据信息
-     * @return
-     */
-    @Override
-    @Transactional
-    public Page screenCustomerInfo(JSONObject obj) {
-        // Obj转实体类
-        Page page = JsonUtils.ObjToEntity(obj.getObj("page"), Page.class);
-        CustomerInfo customerInfo = JsonUtils.ObjToEntity(obj.getObj("customerInfo"), CustomerInfo.class);
-        String month = obj.getStr("month");
-        // 获取登录的商户信息
-        String organId = SecurityUtils.getUser().getOrganId();
-        // 查询数据
-        // 获取当前序列号
-        Long sequence = this.getSequenceValue(organId);
-        // 多表查询比较重复数据
-        List<CustomerInfo> customerInfoList = new LinkedList<CustomerInfo>();
-        // 获取建表年份
-        Map<String, String> yearMap = recordYearService.getYearData(organId);
-        String yearInfo = yearMap.get("yearInfo");
-        for (long i = sequence; i >= 0; i--) {
-            String[] yaerSplit = yearInfo.split(",");
-            for (String year : yaerSplit) {
-                // 筛选数据
-                List<CustomerInfo> customerInfos = OperationUtils.screenData(this.queryInfoListByMonth(organId, i, year, month), customerInfo);
-                if (customerInfos != null && customerInfos.size() > 0) {
-                    customerInfoList.addAll(customerInfos);
-                }
-            }
-        }
-        List<CustomerInfo> records = null;
-        int total = 0;
-        if (customerInfoList != null && customerInfoList.size() > 0) {
-            // 总条数
-            total = customerInfoList.size();
-            // 分页查询数据
-            records = PageUtils.getPage(customerInfoList, String.valueOf(page.getCurrent()), page.getSize());
-        }
-        // 获取数据数量
-        page.setTotal(total);
-        // 赋值
-        page.setRecords(records);
-        return page;
-    }
-
-    /**
-     * 搜索客户信息列表
-     *
-     * @param obj 数据信息
-     * @return
-     */
-    @Override
-    @Transactional
-    public Page searchCustomerInfo(JSONObject obj) {
-        // Obj转实体类
-        Page page = JsonUtils.ObjToEntity(obj.getObj("page"), Page.class);
-        String condition = obj.getStr("condition");
-        // 获取登录的商户信息
-        String organId = SecurityUtils.getUser().getOrganId();
-        // 查询数据
-        // 获取当前序列号
-        Long sequence = this.getSequenceValue(organId);
-        // 多表查询比较重复数据
-        List<CustomerInfo> customerInfoList = new LinkedList<CustomerInfo>();
-        Map<String, String> yearMap = recordYearService.getYearData(organId);
-        String yearInfo = yearMap.get("yearInfo");
-        for (long i = sequence; i >= 0; i--) {
-            String[] yaerSplit = yearInfo.split(",");
-            for (String year : yaerSplit) {
-                // 筛选数据
-                List<CustomerInfo> customerInfos = OperationUtils.searchData(this.queryCustomerInfoList(organId, i, year), condition);
-                if (customerInfos != null && customerInfos.size() > 0) {
-                    customerInfoList.addAll(customerInfos);
-                }
-            }
-        }
-        List<CustomerInfo> records = null;
-        int total = 0;
-        if (customerInfoList != null && customerInfoList.size() > 0) {
-            // 总条数
-            total = customerInfoList.size();
-            // 分页查询数据
-            records = PageUtils.getPage(customerInfoList, String.valueOf(page.getCurrent()), page.getSize());
-        }
-        // 获取数据数量
-        page.setTotal(total);
-        // 赋值
-        page.setRecords(records);
-        return page;
-    }
-
-    /**
-     * 更新客户信息
-     *
-     * @param customerInfo 客户信息
-     * @return
-     */
-    @Override
-    @Transactional
-    public R updateCustomerInfo(CustomerInfo customerInfo) {
-        //  获取表名
-        String tableName = "";
-        if (StringUtils.isNotBlank(customerInfo.getTableInfo())) {
-            tableName = customerInfo.getTableInfo();
-        } else {
-            // 获取登录的商户信息
-            String organId = SecurityUtils.getUser().getOrganId();
-            // 获取表序列号
-            Long num = this.getSequenceValue(organId);
-            // 获取当前年份
-            String year = DateUtils.getYear();
-            // 获取表名
-            tableName = dataBaseExcelProperties.getTablePrefix() + organId + "_" + year + "_" + num;
-        }
-        // 编辑字段
-        String fieldSql = "customer_name = '" + customerInfo.getCustomerName() + "', " +
-                "gender = '" + customerInfo.getGender() + "', " +
-                "phone = '" + customerInfo.getPhone() + "', " +
-                "id_card = '" + customerInfo.getIdCard() + "', " +
-                "car_num = '" + customerInfo.getCarNum() + "', " +
-                "brand_model = '" + customerInfo.getBrandModel() + "', " +
-                "vin_num = '" + customerInfo.getVinNum() + "', " +
-                "engine_num = '" + customerInfo.getEngineNum() + "', " +
-                "clause = '" + customerInfo.getClause() + "', " +
-                "vehicle_type_code = '" + customerInfo.getVehicleTypeCode() + "', " +
-                "use_property_code = '" + customerInfo.getUsePropertyCode() + "', " +
-                "accidents_num = '" + customerInfo.getAccidentsNum() + "', " +
-                "service_life = '" + customerInfo.getServiceLife() + "', " +
-                "first_date = '" + customerInfo.getFirstDate() + "', " +
-                "salesman = '" + customerInfo.getSalesman() + "', " +
-                "update_time = '" + DateUtils.getCurrentDate() + "'";
-
-        String sql = "UPDATE " + tableName + " SET " + fieldSql + " WHERE car_num=" + "'" + customerInfo.getCarNum() + "'";
-        try {
-            // 更新表数据
-            JdbcUtils.exectueUpdate(dataBaseDataProperties, sql, null);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return R.failed(CommonConstants.ERROR_RESULT, "更新失败");
-        }
-        return R.ok();
-    }
-
-    /**
-     * 获取表序列
-     *
-     * @param organId 商户id
-     * @return
-     */
-    @Override
-    @Transactional
-    public Long getSequenceValue(String organId) {
-        // 获取正式表序列名
-        String seqName = CommonConstants.BASE_DATA_PREFIX + "_" + organId;
-        DbSequence dbSequence = dbSequenceService.getById(seqName);
-        if (dbSequence != null) {
-            return dbSequence.getCurrentValue();
-        } else {
-            dbSequenceService.saveSeqByName(seqName, 0, 1);
-            DbSequence sequence = dbSequenceService.getById(seqName);
-            recordYearService.saveYearInfo(organId);
-            return sequence.getCurrentValue();
-        }
-    }
-
-    /**
-     * 将数据添加库中
-     *
-     * @param successList 导入成功的数据
-     * @param organId     商户id
-     */
-    @Override
-    @Transactional
-    public void saveCustomerInfo(List<CustomerInfo> successList, String organId) {
-        // 获取表序列号
-        Long num = this.getSequenceValue(organId);
-        // 获取当前年份
-        String year = DateUtils.getYear();
-        // 获取表名
-        String tableName = dataBaseExcelProperties.getTablePrefix() + organId + "_" + year + "_" + num;
-        // 设置表名用于修改使用
-        successList.stream().map(info -> {
-            if (!StringUtils.isNotBlank(info.getAccidentsNum()) || info.getAccidentsNum().equals("无")) {
-                info.setAccidentsNum(CommonConstants.DEFAULT_INITIAL_VALUE_ZERO);
-            }
-            info.setUseYears(DateUtils.yearCompare(info.getFirstDate(), DateUtils.getCurrentTime()).get("useYears").toString());
-            info.setUseYear(DateUtils.yearCompare(info.getFirstDate(), DateUtils.getCurrentTime()).get("useYear").toString());
-            info.setTableInfo(tableName);
-            return info;
-        }).collect(Collectors.toList());
-        // 转换数据类型
-        List<Object> list = new ArrayList<Object>();
-        list.addAll(successList);
-        // 获取建表字段
-        String tableFields = dataBaseExcelProperties.getTableFields();
-        // 查询表是否存在redis缓存key
-        String key = CommonConstants.BASE_DATA_REDIS_PREFIX + organId + "_" + year + "_" + num;
-        // 数据库表数据
-        Object status = redisTemplate.opsForValue().get(key);
-        if (status == null) {
-            // 根据部门id动态创建生成数据表
-            String initTableSql = dataBaseExcelProperties.getInitTableSql();
-            initTableSql = initTableSql.replace("OID", organId);
-            initTableSql = initTableSql.replace("YEAR", year);
-            initTableSql = initTableSql.replace("NUM", num.toString());
-            // 创建表
-            JdbcUtils.exectueUpdate(dataBaseDataProperties, initTableSql, null);
-            // 插入数据
-            JdbcUtils.svaeBatch(dataBaseDataProperties, tableName, tableFields, list, CustomerInfo.class);
-            try {
-                // 将数据存进缓存中
-                redisTemplate.opsForValue().set(key, organId);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        } else {
-            // 插入数据
-            JdbcUtils.svaeBatch(dataBaseDataProperties, tableName, tableFields, list, CustomerInfo.class);
-        }
-    }
-
-    /**
      * 根据证件号获取地区与性别信息
      *
      * @param successList 导入成功的数据
@@ -754,6 +771,7 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
 
     /**
      * 获取成功与差异数据
+     * 将成功数据保存进数据库
      *
      * @param sList   数据
      * @param organId 商户id
@@ -772,7 +790,9 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         // 创建差异数据集合
         List<CustomerInfo> differenceList = new ArrayList<CustomerInfo>();
         // 获取差异数据(校验当前文件的差异)
+        System.out.println("获取差异数据(校验当前文件的差异)开始：" + DateUtils.getCurrentDate());
         Map<String, Object> currentMap = this.queryCurrentDiffList(sList);
+        System.out.println("获取差异数据(校验当前文件的差异)结束：" + DateUtils.getCurrentDate());
         // 上传成功数据
         List<CustomerInfo> successList = (List<CustomerInfo>) currentMap.get("successList");
         // 上传有差异数据
@@ -805,7 +825,6 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
             }
             // 去除重复数据
             List<CustomerInfo> infoList = OperationUtils.removeDuplicate(successInfoList);
-//            System.err.println("successDataList.size()" + infoList.size());
             // 获取数据库表数据
             int count = this.getCustomerInfoListCount(organId, sequence, yearData);
             // 校验是否需要新建表
@@ -821,8 +840,15 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
                     recordYearService.updateYearInfo(organId);
                 }
             }
-            // 将数据添加库中
-            this.saveCustomerInfo(infoList, organId);
+
+            // 获取表序列号
+            Long num = this.getSequenceValue(organId);
+            // 获取当前年份
+            String year = DateUtils.getYear();
+            // 查询表是否存在redis缓存key
+            String key = CommonConstants.BASE_DATA_REDIS_PREFIX + organId + "_" + year + "_" + num;
+            // 将数据添加进表中
+            asyncService.saveCustomerInfo(successList, organId, year, num, key);
         }
         map.put("successList", successList);
         map.put("differenceList", differenceList);
@@ -903,7 +929,6 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
             return R.ok(infoTemporaryService.removeById(infoVo.getId()));
         }
     }
-
 
     /**
      * 格式化客户性别

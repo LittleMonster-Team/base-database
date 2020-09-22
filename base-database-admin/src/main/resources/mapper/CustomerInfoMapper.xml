@@ -21,6 +21,7 @@
         <result property="serviceLife" column="service_life"/>
         <result property="firstDate" column="first_date"/>
         <result property="salesman" column="salesman"/>
+        <result property="cost" column="cost"/>
         <result property="province" column="province"/>
         <result property="city" column="city"/>
         <result property="county" column="county"/>
@@ -57,7 +58,7 @@
         customer_info.`id`,        customer_info.`customer_name`,        customer_info.`gender`,        customer_info.`phone`,
         customer_info.`id_card`,        customer_info.`car_num`,        customer_info.`brand_model`,        customer_info.`vin_num`,
         customer_info.`engine_num`,        customer_info.`clause`,        customer_info.`vehicle_type_code`,        customer_info.`use_property_code`,
-        customer_info.`accidents_num`,        customer_info.`service_life`,        customer_info.`first_date`,        customer_info.`salesman`,
+        customer_info.`accidents_num`,        customer_info.`service_life`,        customer_info.`first_date`,        customer_info.`salesman`,        customer_info.`cost`,
         customer_info.`province`,        customer_info.`city`,        customer_info.`county`,        customer_info.`version`,        customer_info.`error_msg`,
         customer_info.`table_info`,        customer_info.`use_years`,        customer_info.`use_year`,        customer_info.`create_time`,
         customer_info.`update_time`,        customer_info.`creator_user`,        customer_info.`del_flag`,        customer_info.`tenant_id`,

@@ -115,9 +115,12 @@ public class JdbcUtils<T> {
      * @param dataList    插入数据
      * @param objClass    实体类
      */
-    public static void svaeBatch(Properties p, String tableName, String tableFields, List<Object> dataList, Class objClass) {
+    public static Object svaeBatch(Properties p, String tableName, String tableFields, List<Object> dataList, Class objClass) {
+        // 重复车牌号数据
+        List<Object> repeatList = new ArrayList<>();
         Connection con = null;
         PreparedStatement ps = null;
+        int dataIndex = 0;
         try {
             //获取数据表列字段
             Field[] fields = ReflectUtil.getFieldsDirectly(objClass, false);
@@ -136,6 +139,7 @@ public class JdbcUtils<T> {
             if (dataList != null && dataList.size() > 0) {
                 int len = dataList.size();
                 for (int i = 0; i < dataList.size(); i++) {
+                    dataIndex = i;
                     Object data = dataList.get(i);
                     int index = 1;
                     for (Field field : fields) {
@@ -155,7 +159,7 @@ public class JdbcUtils<T> {
             }
         } catch (Exception e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            repeatList.add(dataList.get(dataIndex));
         } finally {
             try {
                 if (ps != null) {
@@ -166,9 +170,9 @@ public class JdbcUtils<T> {
                 }
             } catch (Exception e) {
                 // TODO Auto-generated catch block
-                e.printStackTrace();
             }
         }
+        return repeatList;
     }
 
 

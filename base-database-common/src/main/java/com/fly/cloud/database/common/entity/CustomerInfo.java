@@ -109,6 +109,11 @@ public class CustomerInfo extends Model<CustomerInfo> {
     @ApiModelProperty(value = "业务员")
     private String salesman;
     /**
+     * 费用
+     */
+    @ApiModelProperty(value = "费用")
+    private String cost;
+    /**
      * 省
      */
     @ApiModelProperty(value = "省")
@@ -266,7 +271,6 @@ public class CustomerInfo extends Model<CustomerInfo> {
         if (o == null || getClass() != o.getClass()) return false;
         CustomerInfo that = (CustomerInfo) o;
         if (customerName != null ? !customerName.equals(that.customerName) : that.customerName != null) return false;
-        if (gender != null ? !gender.equals(that.gender) : that.gender != null) return false;
         if (phone != null ? !phone.equals(that.phone) : that.phone != null) return false;
         if (idCard != null ? !idCard.equals(that.idCard) : that.idCard != null) return false;
         if (carNum != null ? !carNum.equals(that.carNum) : that.carNum != null) return false;
@@ -278,7 +282,6 @@ public class CustomerInfo extends Model<CustomerInfo> {
             return false;
         if (usePropertyCode != null ? !usePropertyCode.equals(that.usePropertyCode) : that.usePropertyCode != null)
             return false;
-        if (accidentsNum != null ? !accidentsNum.equals(that.accidentsNum) : that.accidentsNum != null) return false;
         if (serviceLife != null ? !serviceLife.equals(that.serviceLife) : that.serviceLife != null) return false;
         if (firstDate != null ? !firstDate.equals(that.firstDate) : that.firstDate != null) return false;
         return salesman != null ? salesman.equals(that.salesman) : that.salesman == null;

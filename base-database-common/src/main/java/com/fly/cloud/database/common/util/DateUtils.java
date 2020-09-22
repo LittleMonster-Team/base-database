@@ -4,6 +4,7 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONArray;
 import com.fly.cloud.database.common.constant.CommonConstants;
 import org.apache.commons.lang3.StringUtils;
+import org.aspectj.weaver.ast.Var;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
@@ -420,7 +421,11 @@ public class DateUtils {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         Date date = null;
         try {
-            date = format.parse(str);
+            if (!StringUtils.isNotBlank(str) || str.equals("无")) {
+                date = new Date();
+            } else {
+                date = format.parse(str);
+            }
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -688,26 +693,6 @@ public class DateUtils {
     }
 
     public static void main(String[] args) throws Exception {
-        List<String> list = new ArrayList<>();
-        List<String> chuList = new ArrayList<>();
-        List<String> yuList = new ArrayList<>();
-//        for (int i = 1; i <= 1234567; i++) {
-//            list.add(i + "");
-//        }
-        long chu = 10 / 10000;
-        long yu = 10 % 10000;
-        System.out.println(chu);
-        System.out.println(yu);
-//        for (long index = 0; index < chu; index++) {
-//            chuList = list.subList((int) index * 10000, (int) index * 10000 + 10000);
-//            for (String s : chuList) {
-//                System.out.println("chuList：" + s);
-//            }
-//        }
-//        yuList = list.subList((int) (list.size() - yu), list.size());
-//        for (String s : yuList) {
-//            System.out.println("yuList：" + s);
-//        }
 
     }
 }

@@ -138,13 +138,13 @@ public interface CustomerInfoService extends IService<CustomerInfo> {
     Long getSequenceValue(String organId);
 
     /**
-     * 将数据添加库中
+     * 批量插入数据
      *
-     * @param list    数据
-     * @param organId 商户id
-     * @return
+     * @param infoList    数据
+     * @param tableName   表明
+     * @param tableFields 表字段
      */
-    void saveCustomerInfo(List<CustomerInfo> list, String organId);
+    Object insertCustomerInfoData(List<CustomerInfo> infoList, String tableName, String tableFields);
 
     /**
      * 根据证件号获取地区与性别信息
@@ -156,6 +156,7 @@ public interface CustomerInfoService extends IService<CustomerInfo> {
 
     /**
      * 获取成功与差异数据
+     * 将成功数据保存进数据库
      *
      * @param sList   数据
      * @param organId 商户id
@@ -179,4 +180,12 @@ public interface CustomerInfoService extends IService<CustomerInfo> {
      */
     R removeCustomerInfo(CustomerInfoVO infoVo);
 
+    /**
+     * 插入数据并记录差异数据
+     *
+     * @param infoList    数据
+     * @param tableName   表明
+     * @param tableFields 表字段
+     */
+    void insertInfoData(List<CustomerInfo> infoList, String tableName, String tableFields);
 }

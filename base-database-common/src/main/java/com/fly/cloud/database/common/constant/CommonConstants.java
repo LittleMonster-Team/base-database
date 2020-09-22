@@ -88,6 +88,7 @@ public interface CommonConstants {
     String DEFAULT_INITIAL_VALUE_ZERO = "0";
     String DEFAULT_INITIAL_VALUE_EMPTY = "";
     String DEFAULT_INITIAL_VALUE_UNKNOWN = "未知";
+    String DEFAULT_INITIAL_VALUE_NOTHING = "无";
 
     /**
      * 数据状态标识
