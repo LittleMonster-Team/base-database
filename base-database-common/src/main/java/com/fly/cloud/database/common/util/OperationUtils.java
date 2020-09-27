@@ -2,7 +2,9 @@ package com.fly.cloud.database.common.util;
 
 import com.fly.cloud.database.common.entity.CustomerInfo;
 import org.apache.commons.lang.StringUtils;
+import org.apache.poi.ss.formula.functions.T;
 
+import java.lang.reflect.Field;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -121,6 +123,45 @@ public class OperationUtils {
                                     : StringUtils.isNotBlank(condition) ? info.getCustomerName().equals(condition) : info.getCustomerName().contains("")
                     ).collect(Collectors.toList());
             return collect;
+        }
+        return null;
+    }
+
+    /**
+     * 根据属性名调用set方法
+     *
+     * @param obj          对象
+     * @param propertyName 属性名
+     * @param qtySum       要插入的值
+     */
+    public static void dynamicSet(T obj, String propertyName, Object qtySum) {
+        try {
+            Field field = obj.getClass().getDeclaredField(propertyName);
+            // 设置字段可访问
+            field.setAccessible(true);
+            field.set(obj, qtySum);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 根据属性名调用Get方法
+     *
+     * @param obj          对象
+     * @param propertyName 属性名
+     * @param <T>
+     * @return
+     */
+    public static <T> Object dynamicGet(T obj, String propertyName) {
+        try {
+            Field field = obj.getClass().getDeclaredField(propertyName);
+            // 设置字段可访问
+            field.setAccessible(true);
+            Object qty = field.get(obj);
+            return qty;
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return null;
     }

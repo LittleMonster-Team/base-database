@@ -52,4 +52,8 @@ public class DataBaseExcelProperties {
      * 导出文件根目录
      */
     private String exprotFileRoot;
+    /**
+     * 查询依据
+     */
+    private String queryBasis;
 }

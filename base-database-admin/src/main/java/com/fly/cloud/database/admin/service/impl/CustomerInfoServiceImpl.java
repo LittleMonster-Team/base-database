@@ -214,7 +214,7 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         // 遍历上传的数据
         for (int i = 0; i < list.size(); i++) {
             // 获取车牌号
-            String carNum = list.get(i).getCarNum();
+             String carNum = list.get(i).getCarNum();
             if (set.contains(carNum.trim())) {
                 differenceList.add(list.get(i));// 新数据
                 CustomerInfo customerInfo = map.get(carNum.trim());
@@ -945,6 +945,10 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
             info.setGender("未知");
         }
         return info;
+    }
+
+    public static void main(String[] args) {
+
     }
 }
 

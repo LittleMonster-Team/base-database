@@ -37,14 +37,14 @@ public class CustomerInfoAsyncServiceImpl implements CustomerInfoAsyncService {
      * @param infoList 数据
      */
     @Override
-    @Async("asyncServiceExecutorOne")
+//    @Async("asyncServiceExecutorOne")
     @Transactional
     public void saveCustomerInfo(List<CustomerInfo> infoList, String organId, String year, Long num, String key) {
         // 数据库表数据
         Object status = redisTemplate.opsForValue().get(key);
         // 获取表名
         String tableName = dataBaseExcelProperties.getTablePrefix() + organId + "_" + year + "_" + num;
-        // 获取建表字段
+        // 获取建表字段0
         String tableFields = dataBaseExcelProperties.getTableFields();
         // 判断表是否已创建
         if (status == null) {
@@ -78,7 +78,7 @@ public class CustomerInfoAsyncServiceImpl implements CustomerInfoAsyncService {
      * @param failList       失败数据
      */
     @Override
-    @Async("asyncServiceExecutorTwo")
+//    @Async("asyncServiceExecutorTwo")
     @Transactional
     public void saveInfoTemporary(List<CustomerInfo> differenceList, List<CustomerInfo> failList) {
         if (differenceList != null && differenceList.size() > 0) {
