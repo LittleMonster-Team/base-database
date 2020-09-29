@@ -116,4 +116,21 @@ public interface CommonConstants {
     String COMPANY_SECOND = "次";
     String COMPANY_YEAR = "年";
 
+    /**
+     * 数据去重标识
+     * 0：表示未去重
+     * 1：表示已去重
+     */
+    String NO_DE_DUPLICATION = "0";
+    String WEIGHT_REMOVED = "1";
+
+
+    /**
+     * 删除标识
+     * 0 :表示未删除
+     * 1 :表示已删除
+     */
+    String DEL_FLAG_NOT_DELETED = "0";
+    String DEL_FLAG_DELETED = "1";
+
 }

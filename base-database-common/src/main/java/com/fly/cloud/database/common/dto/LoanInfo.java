@@ -1,27 +1,28 @@
 
-package com.fly.cloud.database.common.entity;
+package com.fly.cloud.database.common.dto;
 
+import com.alibaba.excel.annotation.ExcelProperty;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
+import com.fly.cloud.database.common.entity.CustomerInfo;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 数据失败与重复表
+ * 客户信息
  *
  * @author xux
- * @date 2020-09-09 10:08:12
+ * @date 2020-09-01 14:17:22
  */
 @Data
-@TableName("customer_info_temporary")
+@TableName("customerInfo")
 @EqualsAndHashCode(callSuper = true)
-@ApiModel(description = "数据失败与重复表")
-public class CustomerInfoTemporary extends Model<CustomerInfoTemporary> {
+@ApiModel(description = "客户信息")
+public class LoanInfo  extends Model<LoanInfo > {
     private static final long serialVersionUID = 1L;
 
     /**
@@ -29,21 +30,19 @@ public class CustomerInfoTemporary extends Model<CustomerInfoTemporary> {
      */
     @TableId(type = IdType.ASSIGN_ID)
     @ApiModelProperty(value = "主键")
+    @ExcelProperty(index = 0)
     private String id;
-    /**
-     * 主表id
-     */
-    @ApiModelProperty(value = "主表id")
-    private String parentId;
     /**
      * 客户姓名
      */
     @ApiModelProperty(value = "客户姓名")
+    @ExcelProperty(index = 1)
     private String customerName;
     /**
      * 性别
      */
     @ApiModelProperty(value = "性别")
+    @ExcelProperty(index = 2)
     private String gender;
     /**
      * 手机号
@@ -98,7 +97,7 @@ public class CustomerInfoTemporary extends Model<CustomerInfoTemporary> {
     /**
      * 使用年限
      */
-    @ApiModelProperty(value = "使用年限")
+    @ApiModelProperty(value = "使用年限(客户提供)")
     private String serviceLife;
     /**
      * 初登日期
@@ -110,6 +109,11 @@ public class CustomerInfoTemporary extends Model<CustomerInfoTemporary> {
      */
     @ApiModelProperty(value = "业务员")
     private String salesman;
+    /**
+     * 费用
+     */
+    @ApiModelProperty(value = "费用")
+    private String cost;
     /**
      * 省
      */
@@ -136,10 +140,20 @@ public class CustomerInfoTemporary extends Model<CustomerInfoTemporary> {
     @ApiModelProperty(value = "错误信息")
     private String errorMsg;
     /**
-     * 表信息
+     * 表信息(存放表名)
      */
     @ApiModelProperty(value = "表信息")
     private String tableInfo;
+    /**
+     * 使用年限(含有小数)
+     */
+    @ApiModelProperty(value = "使用年限(含有小数)")
+    private String useYears;
+    /**
+     * 使用年限(整年)
+     */
+    @ApiModelProperty(value = "使用年限(整年)")
+    private String useYear;
     /**
      * 创建时间
      */
@@ -225,6 +239,7 @@ public class CustomerInfoTemporary extends Model<CustomerInfoTemporary> {
      */
     @ApiModelProperty(value = "召回电话3")
     private String recallThree;
+
     /**
      * 备用字段
      */
@@ -251,24 +266,5 @@ public class CustomerInfoTemporary extends Model<CustomerInfoTemporary> {
     @ApiModelProperty(value = "备用字段")
     private String spareField5;
 
-    /**
-     * 数据类型
-     * 0：表示失败数据
-     * 1：表示差异数据
-     */
-    @ApiModelProperty(value = "数据类型")
-    private String dataType;
-
-    /**
-     * 修改标识(1-已修改，其他-未修改)
-     */
-    @ApiModelProperty(value = "修改标识(1-已修改，其他-未修改)")
-    private String editFlag;
-
-    /**
-     * 初登日期月份
-     */
-    @ApiModelProperty(value = "初登日期月份")
-    private String month;
 
 }

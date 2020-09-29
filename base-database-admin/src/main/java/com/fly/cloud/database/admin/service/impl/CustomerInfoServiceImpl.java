@@ -57,6 +57,7 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
     private CustomerInfoVersionService infoVersionService;
     @Autowired
     private RecordYearService recordYearService;
+
     @Autowired
     private CustomerInfoAsyncService asyncService;
 
@@ -70,10 +71,8 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
     @Override
     @Transactional(rollbackFor = Exception.class)
     public R importExcelData(String filePathStr, String fileNames, String organId) {
-        System.err.println("开始：" + DateUtils.getCurrentDate());
-        long kaishi = System.currentTimeMillis();
         try {
-            // filePathStr = "C:/Users/Administrator/Desktop/1000条测试数据.xlsx|C:/Users/Administrator/Desktop/1000条测试数据.xlsx|C:/Users/Administrator/Desktop/奎屯排查.xls";
+//             filePathStr = "C:/Users/Administrator/Desktop/昌吉工作簿9.4-2(2).xlsx";
             // 文件路径
             String[] filePathSplit = filePathStr.split("\\|");
             // 文件名
@@ -84,12 +83,9 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
             List<CustomerInfo> fInfoList = new LinkedList<CustomerInfo>();
             // 存放失败文件名数据
             List<String> fFileList = new LinkedList<String>();
-            // 存放差异数据
-            List<CustomerInfo> dInfoList = new LinkedList<CustomerInfo>();
             // 循环上传文件
             layer:
             for (int i = 0; i < filePathSplit.length; i++) {
-                System.err.println("第" + i + "开始：" + DateUtils.getCurrentDate());
                 // 文件版本类型
                 String fileType = "";
                 //获取文件的后缀名
@@ -107,7 +103,7 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
                     return R.failed("导入格式不正确：导入失败！");
                 }
                 // 读取本地Excel文件
-                // InputStream in = new FileInputStream(filePath);
+//                 InputStream in = new FileInputStream(filePathSplit[i]);
                 // 读取网络Excel文件
                 URL url = new URL(filePathSplit[i]);
                 URLConnection connection = url.openConnection();
@@ -137,9 +133,7 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
                     necessaryFieldTypes.put(row[0], row[1]);
                 }
                 // 获取Excel解析数据
-                System.out.println("获取Excel解析数据开始：" + DateUtils.getCurrentDate());
                 Map<String, Object> resultMap = ExeclUtil.ExeclToList(in, CustomerInfo.class, fields, fieldTypes, necessaryFieldTypes, fileType);
-                System.out.println("获取Excel解析数据结束：" + DateUtils.getCurrentDate());
                 // 解析数据结果集
                 List<CustomerInfo> sList = (List<CustomerInfo>) resultMap.get("successList");
                 List<CustomerInfo> failList = (List<CustomerInfo>) resultMap.get("failList");
@@ -153,40 +147,22 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
                     // 跳出本次循环,上传下一份文件
                     continue layer;
                 }
-                // 给地区与性别信息赋值
-                sList = this.dataAssignment(sList);
-                System.out.println("获取成功与差异数据开始：" + DateUtils.getCurrentDate());
-                // 获取成功与差异数据
-                Map<String, List<CustomerInfo>> map = this.getDifferenceInfoData(sList, organId);
-                System.out.println("获取成功与差异数据结束" + DateUtils.getCurrentDate());
-                List<CustomerInfo> successList = map.get("successList");
-                List<CustomerInfo> differenceList = map.get("differenceList");
-                // 记录成功数据
-                if (successList != null && successList.size() > 0) {
-                    sInfoList.addAll(successList);
-                }
-                if (differenceList != null && differenceList.size() > 0) {
-                    dInfoList.addAll(differenceList);
+                if (sList != null && sList.size() > 0) {
+                    sInfoList.addAll(sList);
+                    // 将数据保存进临时表
+                    asyncService.saveExtraInfo(sList, fileNameSplit[i]);
                 }
                 if (failList != null && failList.size() > 0) {
                     fInfoList.addAll(failList);
+                    // 将失败数据保存进表
+                    asyncService.saveInfoTemporary(failList, CommonConstants.FAIL_DATA);
                 }
-                // 将数据添加进临时表中
-                asyncService.saveInfoTemporary(differenceList, failList);
-                System.err.println("第" + i + "结束：" + DateUtils.getCurrentDate());
             }
             Map<String, Object> map = new HashMap<String, Object>();
-            map.put("successList", sInfoList);
             map.put("successNum", sInfoList.size());
-            map.put("failList", fInfoList);
             map.put("failNum", fInfoList.size());
-            map.put("differenceList", dInfoList);
-            map.put("differenceNum", dInfoList.size());
             map.put("failFileList", fFileList);
             map.put("failFileNum", fFileList.size());
-            long jieshu = System.currentTimeMillis();
-            System.err.println("所耗时长：" + (jieshu - kaishi));
-            System.err.println("结束：" + DateUtils.getCurrentDate());
             return R.ok(map);
         } catch (Exception e) {
             e.printStackTrace();
@@ -214,7 +190,7 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         // 遍历上传的数据
         for (int i = 0; i < list.size(); i++) {
             // 获取车牌号
-             String carNum = list.get(i).getCarNum();
+            String carNum = list.get(i).getCarNum();
             if (set.contains(carNum.trim())) {
                 differenceList.add(list.get(i));// 新数据
                 CustomerInfo customerInfo = map.get(carNum.trim());
@@ -242,58 +218,20 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
     @Override
     @Transactional
     public R exprotExcelData(List<CustomerInfo> infoList) {
+        // 返回文件大小
+        double fileSize = 0;
         // 以时间作为一批
         String nowday = new SimpleDateFormat("ddHHmmss").format(new Date());
         // 保存文件根目录
         String ctxPath = dataBaseExcelProperties.getExprotFileRoot() + File.separator + nowday;
         Map<String, Object> map = new HashMap<String, Object>();
-        // 返回文件大小
-        double fileSize = 0;
-        String starTime = DateUtils.getCurrentDate();
-        System.out.println("starTime" + starTime);
         // 校验文件是否存在
         if (infoList != null && infoList.size() > 0) {
             // 格式化用户性别
             infoList.stream().map(info -> this.formatGender(info)).collect(Collectors.toList());
         }
-        //获取导出字段列表
-        LinkedHashMap<String, String> fields = new LinkedHashMap<String, String>();
-        String fieldNames = dataBaseExcelProperties.getExprotFileds();
-        String[] fieldArr = fieldNames.split(",");
-        for (String f : fieldArr) {
-            String[] row = f.split("_");
-            fields.put(row[0], row[1]);
-        }
-        // 获取需要创建文档的数量
-        long chu = infoList.size() / 50000;
-        if (chu > 0) {
-            for (long index = 0; index < chu; index++) {
-                List<CustomerInfo> chuList = infoList.subList((int) index * 50000, (int) index * 50000 + 50000);
-                try {
-                    // 获取文件相关信息
-                    double size = ExeclUtil.WorkToLocal(ExeclUtil.ListToWorkbook(chuList, fields, CommonConstants.Excel_2007), ctxPath);
-                    // 给文件相关信息赋值
-                    fileSize += size;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        // 获取剩余添加的数
-        long yu = infoList.size() % 50000;
-        if (yu > 0) {
-            List<CustomerInfo> yuList = infoList.subList((int) (infoList.size() - yu), infoList.size());
-            try {
-                // 获取文件相关信息
-                double size = ExeclUtil.WorkToLocal(ExeclUtil.ListToWorkbook(yuList, fields, CommonConstants.Excel_2007), ctxPath);
-                // 给文件相关信息赋值
-                fileSize += size;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        String endTime = DateUtils.getCurrentDate();
-        System.out.println("endTime" + endTime);
+        // 将数据转为Excel文件
+        asyncService.exprotExcelData(infoList, ctxPath);
         map.put("fileLink", ctxPath);
         map.put("fileName", DateUtils.getCurrentTime() + "客户信息.zip");
         map.put("fileSize", fileSize + CommonConstants.BAIKILOBYTE_SIZE);
@@ -560,28 +498,6 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
     }
 
     /**
-     * 插入数据并记录差异数据
-     *
-     * @param infoList    数据
-     * @param tableName   表明
-     * @param tableFields 表字段
-     */
-    @Override
-    @Transactional
-    public void insertInfoData(List<CustomerInfo> infoList, String tableName, String tableFields) {
-        List<CustomerInfo> list = (List<CustomerInfo>) this.insertCustomerInfoData(infoList, tableName, tableFields);
-        if (list != null && list.size() > 0) {
-            // 记录数据类型
-            List<CustomerInfo> collect = list.stream().map(info -> {
-                info.setVersion(CommonConstants.USED_DATA);
-                return info;
-            }).collect(Collectors.toList());
-            // 插入车牌号重复数据
-            infoTemporaryService.addTemporaryData(collect, CommonConstants.DIFFERENCE_DATA);
-        }
-    }
-
-    /**
      * 批量插入数据
      *
      * @param infoList    数据
@@ -590,11 +506,9 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
      */
     @Override
     @Transactional
-    public Object insertCustomerInfoData(List<CustomerInfo> infoList, String tableName, String tableFields) {
+    public void insertCustomerInfoData(List<CustomerInfo> infoList, String tableName, String tableFields) {
         // 转换数据类型
         List<Object> dataList = new ArrayList<Object>();
-        // 错误集合
-        List<CustomerInfo> repeatList = new ArrayList<CustomerInfo>();
         // 设置表名用于修改使用
         infoList.forEach(info -> {
             // 设置出险次数
@@ -610,21 +524,14 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
             dataList.add(info);
             // 批量插入数据
             if (dataList.size() % 1000 == 0) {
-                List<CustomerInfo> list = (List<CustomerInfo>) JdbcUtils.svaeBatch(dataBaseDataProperties, tableName, tableFields, dataList, CustomerInfo.class);
-                if (list != null && list.size() > 0) {
-                    repeatList.addAll(list);
-                }
+                JdbcUtils.svaeBatch(dataBaseDataProperties, tableName, tableFields, dataList, CustomerInfo.class);
                 dataList.clear();
             }
         });
         if (dataList.size() > 0) {
-            List<CustomerInfo> list = (List<CustomerInfo>) JdbcUtils.svaeBatch(dataBaseDataProperties, tableName, tableFields, dataList, CustomerInfo.class);
-            if (list != null && list.size() > 0) {
-                repeatList.addAll(list);
-            }
+            JdbcUtils.svaeBatch(dataBaseDataProperties, tableName, tableFields, dataList, CustomerInfo.class);
             dataList.clear();
         }
-        return repeatList;
     }
 
     /**
@@ -779,10 +686,11 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
      */
     @Override
     @Transactional
-    public Map<String, List<CustomerInfo>> getDifferenceInfoData(List<CustomerInfo> sList, String organId) {
-        Map<String, List<CustomerInfo>> map = new HashMap<String, List<CustomerInfo>>();
+    public Map<String, Object> getDifferenceInfoData(List<CustomerInfo> sList, String organId) {
+        Map<String, Object> map = new HashMap<String, Object>();
         if (sList == null || sList.size() == 0) {
-            map.put("successList", null);
+            map.put("successListNum", 0);
+            map.put("differenceListNum", 0);
             map.put("differenceList", null);
             return map;
         }
@@ -790,9 +698,7 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         // 创建差异数据集合
         List<CustomerInfo> differenceList = new ArrayList<CustomerInfo>();
         // 获取差异数据(校验当前文件的差异)
-        System.out.println("获取差异数据(校验当前文件的差异)开始：" + DateUtils.getCurrentDate());
         Map<String, Object> currentMap = this.queryCurrentDiffList(sList);
-        System.out.println("获取差异数据(校验当前文件的差异)结束：" + DateUtils.getCurrentDate());
         // 上传成功数据
         List<CustomerInfo> successList = (List<CustomerInfo>) currentMap.get("successList");
         // 上传有差异数据
@@ -840,7 +746,6 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
                     recordYearService.updateYearInfo(organId);
                 }
             }
-
             // 获取表序列号
             Long num = this.getSequenceValue(organId);
             // 获取当前年份
@@ -849,9 +754,12 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
             String key = CommonConstants.BASE_DATA_REDIS_PREFIX + organId + "_" + year + "_" + num;
             // 将数据添加进表中
             asyncService.saveCustomerInfo(successList, organId, year, num, key);
+            // 将差异数据添加进表中
+            asyncService.saveInfoTemporary(differenceList, CommonConstants.DIFFERENCE_DATA);
         }
-        map.put("successList", successList);
-        map.put("differenceList", differenceList);
+        map.put("successListNum", successList.size());
+        map.put("differenceListNum", differenceList.size());
+        map.put("differenceL", differenceList);
         return map;
     }
 
@@ -931,6 +839,18 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
     }
 
     /**
+     * 将差异数据添加进表中
+     *
+     * @param differenceList
+     * @param differenceData
+     */
+    @Override
+    @Transactional
+    public void saveInfoTemporary(List<CustomerInfo> differenceList, String differenceData) {
+        asyncService.saveInfoTemporary(differenceList, CommonConstants.DIFFERENCE_DATA);
+    }
+
+    /**
      * 格式化客户性别
      *
      * @param info 客户信息
@@ -947,9 +867,9 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         return info;
     }
 
-    public static void main(String[] args) {
-
-    }
+//    public static void main(String[] args) {
+//
+//    }
 }
 
 

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.fly.cloud.database.admin.mapper.ImportRecordMapper">
+
+    <resultMap id="importRecordMap" type="com.fly.cloud.database.common.entity.ImportRecord">
+        <id property="id" column="id"/>
+        <result property="fileName" column="file_name"/>
+        <result property="dataNum" column="data_num"/>
+        <result property="relationText" column="relation_text"/>
+        <result property="duplicateRemoval" column="duplicate_removal"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="creatorUser" column="creator_user"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="organId" column="organ_id"/>
+    </resultMap>
+
+    <sql id="importRecordSql">
+        import_record.`id`,        import_record.`file_name`,        import_record.`data_num`,        import_record.`relation_text`,        import_record.`duplicate_removal`,        import_record.`create_time`,        import_record.`update_time`,        import_record.`creator_user`,        import_record.`del_flag`,        import_record.`tenant_id`,        import_record.`organ_id`    </sql>
+</mapper>

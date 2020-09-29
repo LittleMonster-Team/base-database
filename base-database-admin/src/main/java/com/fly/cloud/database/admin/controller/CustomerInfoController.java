@@ -138,7 +138,7 @@ public class CustomerInfoController {
     @PreAuthorize("@ato.hasAuthority('database_customerinfo_import')")
     public R importExcelData(@RequestBody JSONObject obj) {
         String organId = SecurityUtils.getUser().getOrganId();
-        return customerInfoService.importExcelData(obj.getStr("fileLink"), obj.getStr("fileLink"), organId);
+        return customerInfoService.importExcelData(obj.getStr("fileLink"), obj.getStr("fileNames"), organId);
     }
 
     /**

@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 客户信息临时表
+ * 数据失败与重复表
  *
  * @author xux
  * @date 2020-09-09 10:08:12
@@ -26,7 +26,7 @@ import java.util.List;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/customerinfotemporary")
-@Api(value = "customerinfotemporary", tags = "客户信息临时表管理")
+@Api(value = "customerinfotemporary", tags = "数据失败与重复表管理")
 public class CustomerInfoTemporaryController {
 
     private final CustomerInfoTemporaryService customerInfoTemporaryService;

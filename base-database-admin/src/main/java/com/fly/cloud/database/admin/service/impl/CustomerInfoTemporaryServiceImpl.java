@@ -14,7 +14,10 @@ import com.fly.cloud.database.admin.service.CustomerInfoVersionService;
 import com.fly.cloud.database.common.constant.CommonConstants;
 import com.fly.cloud.database.common.entity.CustomerInfo;
 import com.fly.cloud.database.common.entity.CustomerInfoTemporary;
-import com.fly.cloud.database.common.util.*;
+import com.fly.cloud.database.common.util.CheckIdCard;
+import com.fly.cloud.database.common.util.DateUtils;
+import com.fly.cloud.database.common.util.JsonUtils;
+import com.fly.cloud.database.common.util.ValidatorUtil;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +28,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 客户信息临时表
+ * 数据失败与重复表
  *
  * @author xux
  * @date 2020-09-09 10:08:12
@@ -90,7 +93,7 @@ public class CustomerInfoTemporaryServiceImpl extends ServiceImpl<CustomerInfoTe
      */
     @Override
     @Transactional
-    public List<CustomerInfoTemporary> addTemporaryData(List<CustomerInfo> dataList, String dataType) {
+    public void addTemporaryData(List<CustomerInfo> dataList, String dataType) {
         List<CustomerInfoTemporary> list = new ArrayList<CustomerInfoTemporary>();
         dataList.stream().map(info -> {
             CustomerInfoTemporary temporary = new CustomerInfoTemporary();
@@ -105,10 +108,17 @@ public class CustomerInfoTemporaryServiceImpl extends ServiceImpl<CustomerInfoTe
             // 记录数据类型
             temporary.setDataType(dataType);
             list.add(temporary);
+            // 批量插入数据
+            if (list.size() % 500 == 0) {
+                this.saveBatch(list);
+                list.clear();
+            }
             return info;
         }).collect(Collectors.toList());
-        this.saveBatch(list);
-        return list;
+        if (list.size() > 0) {
+            this.saveBatch(list);
+            list.clear();
+        }
     }
 
     /**
@@ -251,21 +261,18 @@ public class CustomerInfoTemporaryServiceImpl extends ServiceImpl<CustomerInfoTe
             return R.failed("所选信息中含有错误信息");
         } else {
             // 创建差异数据集合
-            List<CustomerInfoTemporary> dInfoList = new ArrayList<CustomerInfoTemporary>();
+            List<CustomerInfo> differenceList = new ArrayList<CustomerInfo>();
             if (list != null && list.size() > 0) {
                 // 给地区与性别信息赋值
                 list = customerInfoService.dataAssignment(list);
                 // 获取成功与差异数据
-                Map<String, List<CustomerInfo>> map = customerInfoService.getDifferenceInfoData(list, organId);
+                Map<String, Object> map = customerInfoService.getDifferenceInfoData(list, organId);
                 // 获取差异数据
-                List<CustomerInfo> differenceList = map.get("differenceList");
-                if (differenceList != null && differenceList.size() > 0) {
-                    dInfoList.addAll(this.addTemporaryData(map.get("differenceList"), CommonConstants.DIFFERENCE_DATA));
-                }
+                differenceList = (List<CustomerInfo>) map.get("differenceList");
             }
             // 删除临时表数据
             this.removeByIds(idList);
-            return R.ok(dInfoList);
+            return R.ok(differenceList);
         }
     }
 
@@ -291,8 +298,10 @@ public class CustomerInfoTemporaryServiceImpl extends ServiceImpl<CustomerInfoTe
         if (!ValidatorUtil.CarNum(info.getCarNum())) {
             return R.failed(CommonConstants.ERROR_RESULT, "车牌号格式错误");
         }
-        if (!CheckIdCard.check(info.getIdCard())) {
-            return R.failed(CommonConstants.ERROR_RESULT, "证件号格式错误");
+        if (StringUtils.isNotBlank(info.getIdCard()) && !info.getIdCard().equals(CommonConstants.DEFAULT_INITIAL_VALUE_NOTHING)) {
+            if (!CheckIdCard.check(info.getIdCard())) {
+                return R.failed(CommonConstants.ERROR_RESULT, "证件号格式错误");
+            }
         }
         if (StringUtils.isNotBlank(info.getPhone()) && !"无".equals(info.getPhone())) {
             if (!ValidatorUtil.isMobile(info.getPhone())) {

@@ -13,7 +13,6 @@ import com.fly.cloud.database.admin.service.StatisticsService;
 import com.fly.cloud.database.common.constant.CommonConstants;
 import com.fly.cloud.database.common.entity.CustomerInfo;
 import com.fly.cloud.database.common.util.DateUtils;
-import com.fly.cloud.database.common.util.ExeclUtil;
 import com.fly.cloud.database.common.util.JdbcUtils;
 import com.fly.cloud.database.common.util.OperationUtils;
 import com.fly.cloud.database.common.vo.ProportionVO;
@@ -23,9 +22,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.util.*;
 
 /**

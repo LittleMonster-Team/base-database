@@ -39,7 +39,8 @@ public class ExeclUtil {
      *
      * @param in                  excel文件  文件流
      * @param entityClass         实体类
-     * @param fields              字段 字段映射,需要注意的是这个方法中的map中：excel表格中每一列名为键，每一列对应的实体类的英文名为值
+     * @param fields              字段 字段映射,需要注意的是这个方法中的map中：
+     *                            excel表格中每一列名为键，每一列对应的实体类的英文名为值
      * @param fieldTypes          校验字段
      * @param necessaryFieldTypes 必要字段
      * @param fileType            文件类型
@@ -72,28 +73,16 @@ public class ExeclUtil {
             throw new Exception("导入文件格式不正确");
         }
         System.out.println("校验文件类型结束：" + DateUtils.getCurrentDate());
-        // excel中字段的中英文名字数组
-        String[] egtitles = new String[fields.size()];
-        String[] cntitles = new String[fields.size()];
-        // 获取迭代器
-        Iterator<String> it = fields.keySet().iterator();
-        int count = 0;
-        // 遍历数据存放中英文字段
-        while (it.hasNext()) {
-            String cntitle = it.next();
-            String egtitle = fields.get(cntitle);
-            egtitles[count] = egtitle;
-            cntitles[count] = cntitle;
-            count++;
-        }
+        // excel中字段的中文名字数组
+        String[] cntitles = getCnAndEnNames(fields).get("cntitles");
         // 得到excel中sheet总数
         int sheetcount = workbook.getNumberOfSheets();
         if (sheetcount == 0) {
             workbook.close();
             throw new Exception("Excel文件中没有任何数据");
         }
-        // 数据的导出
         System.out.println("数据的导出开始：" + DateUtils.getCurrentDate());
+        // 数据的导出
         for (int i = 0; i < sheetcount; i++) {
             // 过滤隐藏sheet
             boolean sheetHidden = workbook.isSheetHidden(i);
@@ -110,55 +99,18 @@ public class ExeclUtil {
             if (firstRow == null) {
                 continue;
             }
-            // 获取列数，比最后一列列标大1
-            int celllength = firstRow.getLastCellNum();
-            // 存放文件字段名称
-            String[] excelFieldNames = new String[celllength];
             // 存放列名与序号
-            System.out.println("存放列名与序号开始：" + DateUtils.getCurrentDate());
-            Map<String, Integer> colMap = new LinkedHashMap<String, Integer>();
-            for (int f = 0; f < celllength; f++) {
-                // 判断空列
-                if (firstRow.getCell(f) != null) {
-                    // 获取文件一列数据
-                    Cell cell = firstRow.getCell(f);
-                    // 获取Excel中的列名去除回车
-                    excelFieldNames[f] = cell.getStringCellValue().trim().replaceAll("\n", "");
-                    // 将列名和列号放入Map中,这样通过列名就可以拿到列号
-                    for (int g = 0; g < cntitles.length; g++) {
-                        String field = cntitles[g];
-                        if (field.indexOf(excelFieldNames[f]) != -1) {
-                            colMap.put(field, f);
-                            break;
-                        }
-                    }
-                }
-            }
-            // 由于数组是根据长度创建的，所以值是空值，这里对列名map做了去空键的处理
-            colMap.remove(null);
+            Map<String, Object> objectMap = getColMap(firstRow, cntitles);
+            // 文件字段名称
+            String[] excelFieldNames = (String[]) objectMap.get("excelFieldNames");
+            // 列名与序号
+            Map<String, Integer> colMap = (Map<String, Integer>) objectMap.get("colMap");
             // 判断需要的字段在Excel中是否存在
-            // 需要注意的是这个方法中的map中：中文名为键，英文名为值
-            List<String> excelFieldList = Arrays.asList(excelFieldNames);
+            Map<String, Object> requiredFields = getRequiredFields(necessaryFieldTypes, excelFieldNames, headErrorMsg);
             // 记录必要字段个数
-            int nameNum = 0;
-            for (String cnName : necessaryFieldTypes.keySet()) {
-                String[] nameSplit = cnName.split("#");
-                // 记录字段是否存在
-                int nNum = 0;
-                for (String name : nameSplit) {
-                    // 判断字段中是否包含
-                    if (excelFieldList.contains(name)) {
-                        nNum++;
-                    }
-                }
-                if (nNum == 0) {
-                    // 如果字段不存在将数据存储提醒用户
-                    headErrorMsg.append("文件缺少[" + cnName + "]字段；");
-                } else {
-                    // 如果字段存在数据加1
-                    nameNum++;
-                }
-            }
+            int nameNum = (int) requiredFields.get("nameNum");
+            // 错误信息
+            headErrorMsg = (StringBuilder) requiredFields.get("headErrorMsg");
             // 判断必要字段是否存在
             if (nameNum == 0) {
                 resultMap.put("successList", null);
@@ -229,12 +181,117 @@ public class ExeclUtil {
                 }
             }
         }
+        System.out.println("数据的导出结束：" + DateUtils.getCurrentDate());
         resultMap.put("successList", successList);
         resultMap.put("failList", failList);
         resultMap.put("errorMsg", errorMsg);
         resultMap.put("headErrorMsg", headErrorMsg);
         workbook.close();
         in.close();
+        return resultMap;
+    }
+
+    /**
+     * 校验必要字段
+     *
+     * @param necessaryFieldTypes 必要字段
+     * @param excelFieldNames     文件字段名称
+     * @param headErrorMsg        错误信息
+     * @return
+     */
+    private static Map<String, Object> getRequiredFields(Map<String, String> necessaryFieldTypes, String[] excelFieldNames, StringBuilder headErrorMsg) {
+        // 返货结果集map
+        Map<String, Object> map = new HashMap<String, Object>();
+        // 需要注意的是这个方法中的map中：中文名为键，英文名为值
+        List<String> excelFieldList = Arrays.asList(excelFieldNames);
+        int nameNum = 0;
+        for (String cnName : necessaryFieldTypes.keySet()) {
+            String[] nameSplit = cnName.split("#");
+            // 记录字段是否存在
+            int nNum = 0;
+            for (String name : nameSplit) {
+                // 判断字段中是否包含
+                if (excelFieldList.contains(name)) {
+                    nNum++;
+                }
+            }
+            if (nNum == 0) {
+                // 如果字段不存在将数据存储提醒用户
+                headErrorMsg.append("文件缺少[" + cnName + "]字段；");
+            } else {
+                // 如果字段存在数据加1
+                nameNum++;
+            }
+        }
+        map.put("nameNum", nameNum);
+        map.put("headErrorMsg", headErrorMsg);
+        return map;
+    }
+
+    /**
+     * 存放列名与序号
+     *
+     * @param firstRow Sheet的第一行
+     * @param cntitles 表头
+     * @return
+     */
+    public static Map<String, Object> getColMap(Row firstRow, String[] cntitles) {
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
+        // 获取列数，比最后一列列标大1
+        int celllength = firstRow.getLastCellNum();
+        // 存放文件字段名称
+        String[] excelFieldNames = new String[celllength];
+        // 存放列名与序号
+        Map<String, Integer> colMap = new LinkedHashMap<String, Integer>();
+        for (int f = 0; f < celllength; f++) {
+            // 判断空列
+            if (firstRow.getCell(f) != null) {
+                // 获取文件一列数据
+                Cell cell = firstRow.getCell(f);
+                // 获取Excel中的列名去除回车
+                excelFieldNames[f] = cell.getStringCellValue().trim().replaceAll("\n", "");
+                // 将列名和列号放入Map中,这样通过列名就可以拿到列号
+                for (int g = 0; g < cntitles.length; g++) {
+                    String field = cntitles[g];
+                    if (field.indexOf(excelFieldNames[f]) != -1) {
+                        colMap.put(field, f);
+                        break;
+                    }
+                }
+            }
+        }
+        // 由于数组是根据长度创建的，所以值是空值，这里对列名map做了去空键的处理
+        colMap.remove(null);
+        map.put("colMap", colMap);
+        map.put("excelFieldNames", excelFieldNames);
+        return map;
+    }
+
+    /**
+     * 获取excel中字段的中英文名字数组
+     *
+     * @param fields 字段
+     * @return
+     */
+    public static Map<String, String[]> getCnAndEnNames(Map<String, String> fields) {
+        // 返货结果集map
+        Map<String, String[]> resultMap = new HashMap<String, String[]>();
+
+        String[] egtitles = new String[fields.size()];
+        String[] cntitles = new String[fields.size()];
+        // 获取迭代器
+        Iterator<String> it = fields.keySet().iterator();
+        int count = 0;
+        // 遍历数据存放中英文字段
+        while (it.hasNext()) {
+            String cntitle = it.next();
+            String egtitle = fields.get(cntitle);
+            egtitles[count] = egtitle;
+            cntitles[count] = cntitle;
+            count++;
+        }
+        resultMap.put("egtitles", egtitles);
+        resultMap.put("cntitles", cntitles);
         return resultMap;
     }
 
@@ -248,7 +305,7 @@ public class ExeclUtil {
      * @param <T>
      * @throws Exception
      */
-    public static <T> void ListToExecl(List<T> dataList, OutputStream out, LinkedHashMap<String, String> fields, String fileType) throws Exception {
+    public static <T> void ListToExecl(List<T> dataList, OutputStream out, LinkedHashMap<String, String> fields, String fileType, Integer chu) throws Exception {
         // 建立文档
         Workbook workbook = null;
         // 校验文件类型
@@ -421,8 +478,8 @@ public class ExeclUtil {
             int rownum = 0;
             // 计算每页的起始数据和结束数据
             int startIndex = i * sheetsize;
-            int endIndex = (i + 1) * sheetsize - 1 > dataList.size() ? dataList.size()
-                    : (i + 1) * sheetsize - 1;
+            int endIndex = (i + 1) * sheetsize > dataList.size() ? dataList.size()
+                    : (i + 1) * sheetsize;
             // 创建每页，并创建第一行
             Sheet sheet = workbook.createSheet();
             Row row = sheet.createRow(rownum);
@@ -503,9 +560,7 @@ public class ExeclUtil {
      * @return
      * @throws Exception
      */
-    public static <T> double WorkToLocal(Workbook workbook, String ctxPath) throws Exception {
-        // 设置文件大小
-        double fileSize = 0;
+    public static <T> void WorkToLocal(Workbook workbook, String ctxPath) throws Exception {
         try {
             // 设置文件名称
             String name = new SimpleDateFormat("ddHHmmss").format(new Date());
@@ -533,13 +588,10 @@ public class ExeclUtil {
             out.flush();
             // 关闭文件流
             out.close();
-            // 获取导出文件大小
-            fileSize += (double) file.length() / 1024;
         } catch (Exception e) {
             workbook.close();
             e.printStackTrace();
         }
-        return fileSize;
     }
 
 
@@ -690,7 +742,7 @@ public class ExeclUtil {
      * @param cell
      * @return
      */
-    private static Object getCellValue(Cell cell) {
+    public static Object getCellValue(Cell cell) {
         Object obj = "";
         if (cell == null) {
             return obj;

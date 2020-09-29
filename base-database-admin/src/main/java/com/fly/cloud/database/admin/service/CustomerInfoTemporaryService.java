@@ -11,7 +11,7 @@ import com.fly.cloud.database.common.entity.CustomerInfoTemporary;
 import java.util.List;
 
 /**
- * 客户信息临时表
+ * 数据失败与重复表
  *
  * @author xux
  * @date 2020-09-09 10:08:12
@@ -46,7 +46,7 @@ public interface CustomerInfoTemporaryService extends IService<CustomerInfoTempo
      * @param dataList 手数据
      * @param dataType 数据类型
      */
-    List<CustomerInfoTemporary> addTemporaryData(List<CustomerInfo> dataList, String dataType);
+    void addTemporaryData(List<CustomerInfo> dataList, String dataType);
 
     /**
      * 导入差异数据

@@ -144,7 +144,7 @@ public interface CustomerInfoService extends IService<CustomerInfo> {
      * @param tableName   表明
      * @param tableFields 表字段
      */
-    Object insertCustomerInfoData(List<CustomerInfo> infoList, String tableName, String tableFields);
+    void insertCustomerInfoData(List<CustomerInfo> infoList, String tableName, String tableFields);
 
     /**
      * 根据证件号获取地区与性别信息
@@ -162,7 +162,7 @@ public interface CustomerInfoService extends IService<CustomerInfo> {
      * @param organId 商户id
      * @return
      */
-    Map<String, List<CustomerInfo>> getDifferenceInfoData(List<CustomerInfo> sList, String organId);
+    Map<String, Object> getDifferenceInfoData(List<CustomerInfo> sList, String organId);
 
     /**
      * 查询客户信息详情
@@ -181,11 +181,9 @@ public interface CustomerInfoService extends IService<CustomerInfo> {
     R removeCustomerInfo(CustomerInfoVO infoVo);
 
     /**
-     * 插入数据并记录差异数据
-     *
-     * @param infoList    数据
-     * @param tableName   表明
-     * @param tableFields 表字段
+     * 将数据添加进临时表中
+     * @param differenceList
+     * @param differenceData
      */
-    void insertInfoData(List<CustomerInfo> infoList, String tableName, String tableFields);
+    void saveInfoTemporary(List<CustomerInfo> differenceList, String differenceData);
 }
