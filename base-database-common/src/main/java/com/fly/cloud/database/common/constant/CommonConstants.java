@@ -132,5 +132,8 @@ public interface CommonConstants {
      */
     String DEL_FLAG_NOT_DELETED = "0";
     String DEL_FLAG_DELETED = "1";
-
+    /**
+     * 每份文档的数量
+     */
+    Integer DOCUMENT_DATA_VOLUME = 50000;
 }

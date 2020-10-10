@@ -456,9 +456,6 @@ public class ExeclUtil {
 
         // 根据dataList计算需要有多少页sheet
         int sheetSize = dataList.size() / sheetsize;
-        if (dataList.size() % sheetsize > 0) {
-            sheetSize += 1;
-        }
         // 提取表格的字段名（英文字段名是为了对照中文字段名的）
         String[] egtitles = new String[fields.size()];
         String[] cntitles = new String[fields.size()];
@@ -564,7 +561,7 @@ public class ExeclUtil {
         try {
             // 设置文件名称
             String name = new SimpleDateFormat("ddHHmmss").format(new Date());
-            String fileName = name + "customer_info.xlsx";
+            String fileName = name + "customer_info.xls";
             // 获取文件
             File file = new File(ctxPath);
             // 校验文件夹是否存在

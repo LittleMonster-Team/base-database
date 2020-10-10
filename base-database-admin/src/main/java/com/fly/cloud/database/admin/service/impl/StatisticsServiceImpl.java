@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 统计
@@ -248,6 +249,7 @@ public class StatisticsServiceImpl extends ServiceImpl<CustomerInfoMapper, Custo
         String month = obj.getStr("month");
         // 查询数据
         List<CustomerInfo> infoList = this.getInfoList(organId, year, month);
+
         return customerInfoService.exprotExcelData(infoList);
     }
 
@@ -315,6 +317,8 @@ public class StatisticsServiceImpl extends ServiceImpl<CustomerInfoMapper, Custo
             // 筛选数据
             List<CustomerInfo> list = this.queryInfoList(organId, i, year, month);
             if (list != null && list.size() > 0) {
+                // 格式化用户性别
+                list.stream().map(info -> customerInfoService.formatGender(info)).collect(Collectors.toList());
                 infoList.addAll(list);
             }
         }

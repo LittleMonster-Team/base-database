@@ -225,11 +225,6 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         // 保存文件根目录
         String ctxPath = dataBaseExcelProperties.getExprotFileRoot() + File.separator + nowday;
         Map<String, Object> map = new HashMap<String, Object>();
-        // 校验文件是否存在
-        if (infoList != null && infoList.size() > 0) {
-            // 格式化用户性别
-            infoList.stream().map(info -> this.formatGender(info)).collect(Collectors.toList());
-        }
         // 将数据转为Excel文件
         asyncService.exprotExcelData(infoList, ctxPath);
         map.put("fileLink", ctxPath);
@@ -856,7 +851,9 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
      * @param info 客户信息
      * @return
      */
-    private CustomerInfo formatGender(CustomerInfo info) {
+    @Override
+    @Transactional
+    public CustomerInfo formatGender(CustomerInfo info) {
         if (info.getGender().equals(CommonConstants.GENDER_MALE)) {
             info.setGender("男");
         } else if (info.getGender().equals(CommonConstants.GENDER_FEMALE)) {
@@ -867,9 +864,6 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         return info;
     }
 
-//    public static void main(String[] args) {
-//
-//    }
 }
 
 

@@ -182,8 +182,17 @@ public interface CustomerInfoService extends IService<CustomerInfo> {
 
     /**
      * 将数据添加进临时表中
+     *
      * @param differenceList
      * @param differenceData
      */
     void saveInfoTemporary(List<CustomerInfo> differenceList, String differenceData);
+
+    /**
+     * 格式化客户性别
+     *
+     * @param info 客户信息
+     * @return
+     */
+    CustomerInfo formatGender(CustomerInfo info);
 }

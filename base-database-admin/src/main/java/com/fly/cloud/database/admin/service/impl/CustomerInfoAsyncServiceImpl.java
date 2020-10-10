@@ -127,7 +127,7 @@ public class CustomerInfoAsyncServiceImpl implements CustomerInfoAsyncService {
      * @return
      */
     @Override
-    @Async("asyncServiceExecutorFour")
+//    @Async("asyncServiceExecutorFour")
     @Transactional
     public void exprotExcelData(List<CustomerInfo> infoList, String ctxPath) {
         String starTime = DateUtils.getCurrentDate();
@@ -141,25 +141,25 @@ public class CustomerInfoAsyncServiceImpl implements CustomerInfoAsyncService {
             fields.put(row[0], row[1]);
         }
         // 获取需要创建文档的数量
-        long chu = infoList.size() / 50000;
+        long chu = infoList.size() / CommonConstants.DOCUMENT_DATA_VOLUME;
         if (chu > 0) {
             for (long index = 0; index < chu; index++) {
-                List<CustomerInfo> chuList = infoList.subList((int) index * 50000, (int) index * 50000 + 50000);
+                List<CustomerInfo> chuList = infoList.subList((int) index * CommonConstants.DOCUMENT_DATA_VOLUME, (int) index * CommonConstants.DOCUMENT_DATA_VOLUME + CommonConstants.DOCUMENT_DATA_VOLUME);
                 try {
                     // 获取文件相关信息
-                    ExeclUtil.WorkToLocal(ExeclUtil.ListToWorkbook(chuList, fields, CommonConstants.Excel_2007), ctxPath);
+                    ExeclUtil.WorkToLocal(ExeclUtil.ListToWorkbook(chuList, fields, CommonConstants.Excel_2003), ctxPath);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }
         // 获取剩余添加的数
-        long yu = infoList.size() % 50000;
+        long yu = infoList.size() % CommonConstants.DOCUMENT_DATA_VOLUME;
         if (yu > 0) {
             List<CustomerInfo> yuList = infoList.subList((int) (infoList.size() - yu), infoList.size());
             try {
                 // 获取文件相关信息
-                ExeclUtil.WorkToLocal(ExeclUtil.ListToWorkbook(yuList, fields, CommonConstants.Excel_2007), ctxPath);
+                ExeclUtil.WorkToLocal(ExeclUtil.ListToWorkbook(yuList, fields, CommonConstants.Excel_2003), ctxPath);
             } catch (Exception e) {
                 e.printStackTrace();
             }
